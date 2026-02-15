@@ -8,9 +8,8 @@ import {
   faClock,
   faFire,
   faEye,
-  faSparkles,
+  faStar,
 } from "@fortawesome/free-solid-svg-icons";
-import { storage } from "@/lib/api";
 
 type SortOption = "latest" | "popular" | "views";
 
@@ -20,7 +19,6 @@ type SortOption = "latest" | "popular" | "views";
  */
 export default function Home() {
   const [sortBy, setSortBy] = useState<SortOption>("latest");
-  const [userEmail] = useState(() => storage.getCurrentUserEmail());
 
   const sortOptions = [
     { value: "latest" as SortOption, label: "최신순", icon: faClock },
@@ -36,10 +34,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                <FontAwesomeIcon
-                  icon={faSparkles}
-                  className="text-white text-lg"
-                />
+                <FontAwesomeIcon icon={faStar} className="text-white text-lg" />
               </div>
               <div>
                 <h1 className="text-xl font-bold gradient-text">StudyMate</h1>
@@ -81,7 +76,7 @@ export default function Home() {
         </div>
 
         {/* 피드 */}
-        <PostFeed userEmail={userEmail} />
+        <PostFeed />
       </main>
     </div>
   );
