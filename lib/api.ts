@@ -42,6 +42,8 @@ async function fetchAPI<T>(
   const response = await fetch(fullUrl, {
     headers: {
       "Content-Type": "application/json",
+      // ngrok 브라우저 경고 우회 (프로덕션 배포용)
+      "ngrok-skip-browser-warning": "true",
       ...options?.headers,
     },
     ...options,
@@ -304,6 +306,10 @@ export const fileAPI = {
 
     const response = await fetch(`${API_BASE_URL}/files/upload`, {
       method: "POST",
+      headers: {
+        // ngrok 브라우저 경고 우회 (프로덕션 배포용)
+        "ngrok-skip-browser-warning": "true",
+      },
       body: formData,
       // Content-Type은 자동으로 설정됨 (multipart/form-data)
     });
