@@ -197,14 +197,14 @@ export const commentAPI = {
   getComments: async (
     postId: number,
     currentUserEmail?: string,
-    page: number = 0,
-    size: number = 20,
+    page: number = 1,
+    size: number = 10,
   ): Promise<ApiResult<SliceResponse<CommentResponse>>> => {
     const params = new URLSearchParams({
       page: page.toString(),
       size: size.toString(),
-      sort: "createdAt,asc",
     });
+    // likedByCurrentUser 정보를 위해 currentUserEmail 전달 (선택)
     if (currentUserEmail) {
       params.append("currentUserEmail", currentUserEmail);
     }

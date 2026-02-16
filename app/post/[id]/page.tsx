@@ -67,7 +67,7 @@ export default function PostDetailPage() {
       const result = await postAPI.getPost(postId, userEmail);
       setPost(result.data);
       setEditContent(result.data.content);
-      
+
       // 내가 작성한 게시글인지 확인 (자성자 이메일과 현재 사용자 이메일 비교)
       setIsMyPost(result.data.authorEmail === userEmail);
     } catch (error) {
@@ -453,35 +453,48 @@ export default function PostDetailPage() {
 
             {/* 댓글 목록 */}
             <div className="space-y-4">
-              {comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="flex gap-3 p-4 bg-purple-50/50 rounded-2xl"
-                >
-                  <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-300 flex-shrink-0">
-                    <Image
-                      src={`https://api.dicebear.com/7.x/initials/svg?seed=${comment.authorName}`}
-                      alt={comment.authorName}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-sm text-gray-900">
-                        {comment.authorName}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {formatDistanceToNow(new Date(comment.createdAt), {
-                          addSuffix: true,
-                          locale: ko,
-                        })}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-700">{comment.content}</p>
-                  </div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-bold text-gray-900">
+                  💬 댓글 {comments.length}개
+                </h3>
+              </div>
+
+              {comments.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="text-sm">아직 댓글이 없습니다.</p>
+                  <p className="text-xs mt-1">첫 번째 댓글을 남겨보세요! 🎉</p>
                 </div>
-              ))}
+              ) : (
+                comments.map((comment) => (
+                  <div
+                    key={comment.id}
+                    className="flex gap-3 p-4 bg-purple-50/50 rounded-2xl"
+                  >
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-300 flex-shrink-0">
+                      <Image
+                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${comment.authorName}`}
+                        alt={comment.authorName}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-sm text-gray-900">
+                          {comment.authorName}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatDistanceToNow(new Date(comment.createdAt), {
+                            addSuffix: true,
+                            locale: ko,
+                          })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700">{comment.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
