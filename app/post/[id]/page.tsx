@@ -110,7 +110,10 @@ export default function PostDetailPage() {
         toast.success("❤️ 좋아요!");
       }
     } catch (error) {
-      toast.error("오류가 발생했습니다");
+      // API 에러 응답의 message를 표시
+      const errorMessage =
+        error instanceof Error ? error.message : "오류가 발생했습니다";
+      toast.error(errorMessage);
       console.error("Like error:", error);
     }
   };
@@ -138,7 +141,9 @@ export default function PostDetailPage() {
 
       toast.success("댓글이 등록되었습니다");
     } catch (error) {
-      toast.error("댓글 등록에 실패했습니다");
+      const errorMessage =
+        error instanceof Error ? error.message : "댓글 등록에 실패했습니다";
+      toast.error(errorMessage);
       console.error("Comment error:", error);
     } finally {
       setIsSubmitting(false);
@@ -175,7 +180,9 @@ export default function PostDetailPage() {
       setEditCommentContent("");
       toast.success("댓글이 수정되었습니다");
     } catch (error) {
-      toast.error("댓글 수정에 실패했습니다");
+      const errorMessage =
+        error instanceof Error ? error.message : "댓글 수정에 실패했습니다";
+      toast.error(errorMessage);
       console.error("Update comment error:", error);
     }
   };
@@ -199,7 +206,9 @@ export default function PostDetailPage() {
 
       toast.success("댓글이 삭제되었습니다");
     } catch (error) {
-      toast.error("댓글 삭제에 실패했습니다");
+      const errorMessage =
+        error instanceof Error ? error.message : "댓글 삭제에 실패했습니다";
+      toast.error(errorMessage);
       console.error("Delete comment error:", error);
     }
   };
@@ -279,7 +288,9 @@ export default function PostDetailPage() {
       setEditFilePreview(null);
       toast.success("게시글이 수정되었습니다");
     } catch (error) {
-      toast.error("게시글 수정에 실패했습니다");
+      const errorMessage =
+        error instanceof Error ? error.message : "게시글 수정에 실패했습니다";
+      toast.error(errorMessage);
       console.error("Update error:", error);
     } finally {
       setIsUpdating(false);
@@ -298,7 +309,9 @@ export default function PostDetailPage() {
       toast.success("게시글이 삭제되었습니다");
       router.push("/");
     } catch (error) {
-      toast.error("게시글 삭제에 실패했습니다");
+      const errorMessage =
+        error instanceof Error ? error.message : "게시글 삭제에 실패했습니다";
+      toast.error(errorMessage);
       console.error("Delete error:", error);
     }
   };

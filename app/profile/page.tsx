@@ -63,7 +63,11 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error("좋아요한 글 로드 실패:", error);
-      toast.error("좋아요한 글을 불러오는데 실패했습니다");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "좋아요한 글을 불러오는데 실패했습니다";
+      toast.error(errorMessage);
     } finally {
       setLikedPostsLoading(false);
     }
@@ -87,7 +91,11 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error("내가 쓴 글 로드 실패:", error);
-      toast.error("내가 쓴 글을 불러오는데 실패했습니다");
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "내가 쓴 글을 불러오는데 실패했습니다";
+      toast.error(errorMessage);
     } finally {
       setMyPostsLoading(false);
     }

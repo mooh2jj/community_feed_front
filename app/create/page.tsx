@@ -71,7 +71,11 @@ export default function CreatePost() {
           }
         } catch (uploadError) {
           console.error("File upload error:", uploadError);
-          toast.error("파일 업로드에 실패했습니다");
+          const errorMessage =
+            uploadError instanceof Error
+              ? uploadError.message
+              : "파일 업로드에 실패했습니다";
+          toast.error(errorMessage);
           setIsSubmitting(false);
           return;
         }
@@ -87,7 +91,9 @@ export default function CreatePost() {
       toast.success("✨ 게시물이 등록되었습니다!");
       router.push("/");
     } catch (error) {
-      toast.error("게시물 등록에 실패했습니다");
+      const errorMessage =
+        error instanceof Error ? error.message : "게시물 등록에 실패했습니다";
+      toast.error(errorMessage);
       console.error("Post creation error:", error);
     } finally {
       setIsSubmitting(false);

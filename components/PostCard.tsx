@@ -59,7 +59,9 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
       }
       onLikeChange?.();
     } catch (error) {
-      toast.error("오류가 발생했습니다");
+      const errorMessage =
+        error instanceof Error ? error.message : "오류가 발생했습니다";
+      toast.error(errorMessage);
       console.error("Like error:", error);
     } finally {
       setIsLoading(false);
