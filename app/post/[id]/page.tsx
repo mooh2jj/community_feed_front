@@ -44,12 +44,16 @@ export default function PostDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMyPost, setIsMyPost] = useState(false);
 
-  // 수정 모드 상태
+  // 게시글 수정 모드 상태
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [editFile, setEditFile] = useState<File | null>(null);
   const [editFilePreview, setEditFilePreview] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // 댓글 수정 모드 상태
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState("");
 
   const userEmail = storage.getCurrentUserEmail();
 
@@ -138,6 +142,65 @@ export default function PostDetailPage() {
       console.error("Comment error:", error);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // 댓글 수정 모드로 전환
+  const handleEditComment = (comment: CommentResponse) => {
+    setEditingCommentId(comment.id);
+    setEditCommentContent(comment.content);
+  };
+
+  // 댓글 수정 취소
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditCommentContent("");
+  };
+
+  // 댓글 수정 저장
+  const handleUpdateComment = async (commentId: number) => {
+    if (!editCommentContent.trim()) {
+      toast.error("댓글 내용을 입력해주세요");
+      return;
+    }
+
+    try {
+      const result = await commentAPI.updateComment(commentId, userEmail, {
+        content: editCommentContent.trim(),
+      });
+
+      // 댓글 목록 업데이트
+      setComments(comments.map((c) => (c.id === commentId ? result.data : c)));
+      setEditingCommentId(null);
+      setEditCommentContent("");
+      toast.success("댓글이 수정되었습니다");
+    } catch (error) {
+      toast.error("댓글 수정에 실패했습니다");
+      console.error("Update comment error:", error);
+    }
+  };
+
+  // 댓글 삭제
+  const handleDeleteComment = async (commentId: number) => {
+    if (!confirm("정말로 이 댓글을 삭제하시겠습니까?")) {
+      return;
+    }
+
+    try {
+      await commentAPI.deleteComment(commentId, userEmail);
+
+      // 댓글 목록에서 제거
+      setComments(comments.filter((c) => c.id !== commentId));
+
+      // 게시글의 댓글 수 업데이트
+      if (post) {
+        setPost({ ...post, commentCount: post.commentCount - 1 });
+      }
+
+      toast.success("댓글이 삭제되었습니다");
+    } catch (error) {
+      toast.error("댓글 삭제에 실패했습니다");
+      console.error("Delete comment error:", error);
     }
   };
 
@@ -465,35 +528,118 @@ export default function PostDetailPage() {
                   <p className="text-xs mt-1">첫 번째 댓글을 남겨보세요! 🎉</p>
                 </div>
               ) : (
-                comments.map((comment) => (
-                  <div
-                    key={comment.id}
-                    className="flex gap-3 p-4 bg-purple-50/50 rounded-2xl"
-                  >
-                    <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-300 flex-shrink-0">
-                      <Image
-                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${comment.authorName}`}
-                        alt={comment.authorName}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-sm text-gray-900">
-                          {comment.authorName}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {formatDistanceToNow(new Date(comment.createdAt), {
-                            addSuffix: true,
-                            locale: ko,
-                          })}
-                        </span>
+                comments.map((comment) => {
+                  const isMyComment = comment.authorEmail === userEmail;
+                  const isEditingThisComment = editingCommentId === comment.id;
+
+                  return (
+                    <div
+                      key={comment.id}
+                      className="flex gap-3 p-4 bg-purple-50/50 rounded-2xl"
+                    >
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-300 flex-shrink-0">
+                        <Image
+                          src={`https://api.dicebear.com/7.x/initials/svg?seed=${comment.authorName}`}
+                          alt={comment.authorName}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
-                      <p className="text-sm text-gray-700">{comment.content}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm text-gray-900">
+                              {comment.authorName}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {formatDistanceToNow(
+                                new Date(comment.createdAt),
+                                {
+                                  addSuffix: true,
+                                  locale: ko,
+                                },
+                              )}
+                            </span>
+                          </div>
+
+                          {/* 내가 작성한 댓글인 경우 수정/삭제 버튼 표시 */}
+                          {isMyComment && !isEditingThisComment && (
+                            <div className="flex gap-1">
+                              <Button
+                                onClick={() => handleEditComment(comment)}
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-100"
+                              >
+                                <FontAwesomeIcon
+                                  icon={faEdit}
+                                  className="mr-1"
+                                />
+                                수정
+                              </Button>
+                              <Button
+                                onClick={() => handleDeleteComment(comment.id)}
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-100"
+                              >
+                                <FontAwesomeIcon
+                                  icon={faTrash}
+                                  className="mr-1"
+                                />
+                                삭제
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 수정 모드 */}
+                        {isEditingThisComment ? (
+                          <div className="space-y-2 mt-2">
+                            <Textarea
+                              value={editCommentContent}
+                              onChange={(e) =>
+                                setEditCommentContent(e.target.value)
+                              }
+                              className="min-h-[60px] resize-none border-2 border-purple-200 focus:border-purple-500 rounded-xl text-sm"
+                              maxLength={200}
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() => handleUpdateComment(comment.id)}
+                                size="sm"
+                                className="h-8 px-3 text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                              >
+                                <FontAwesomeIcon
+                                  icon={faSave}
+                                  className="mr-1"
+                                />
+                                저장
+                              </Button>
+                              <Button
+                                onClick={handleCancelEditComment}
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-3 text-xs border-gray-300"
+                              >
+                                <FontAwesomeIcon
+                                  icon={faTimes}
+                                  className="mr-1"
+                                />
+                                취소
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* 일반 모드 */
+                          <p className="text-sm text-gray-700">
+                            {comment.content}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

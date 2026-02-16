@@ -225,6 +225,34 @@ export const commentAPI = {
       },
     );
   },
+
+  // 댓글 수정
+  updateComment: async (
+    commentId: number,
+    authorEmail: string,
+    data: CommentCreateRequest,
+  ): Promise<ApiResult<CommentResponse>> => {
+    return fetchAPI(
+      `/comments/${commentId}?authorEmail=${encodeURIComponent(authorEmail)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      },
+    );
+  },
+
+  // 댓글 삭제
+  deleteComment: async (
+    commentId: number,
+    authorEmail: string,
+  ): Promise<ApiResult<string>> => {
+    return fetchAPI(
+      `/comments/${commentId}?authorEmail=${encodeURIComponent(authorEmail)}`,
+      {
+        method: "DELETE",
+      },
+    );
+  },
 };
 
 /**
