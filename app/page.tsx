@@ -25,7 +25,7 @@ export default function Home() {
     if (typeof window !== "undefined") {
       return storage.getCurrentUserEmail();
     }
-    return "user@example.com";
+    return "user1@test.com";
   });
 
   const sortOptions = [

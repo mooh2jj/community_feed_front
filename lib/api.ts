@@ -379,8 +379,8 @@ export const storage = {
 
   // 현재 사용자 이메일 (임시)
   getCurrentUserEmail: (): string => {
-    if (typeof window === "undefined") return "user@example.com";
-    return localStorage.getItem("currentUserEmail") || "user@example.com";
+    if (typeof window === "undefined") return "user1@test.com";
+    return localStorage.getItem("currentUserEmail") || "user1@test.com";
   },
 
   setCurrentUserEmail: (email: string) => {
