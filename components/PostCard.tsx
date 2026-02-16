@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -27,6 +28,7 @@ interface PostCardProps {
  * 3D 그림자와 애니메이션이 있는 매력적인 디자인
  */
 export default function PostCard({ post, onLikeChange }: PostCardProps) {
+  const router = useRouter();
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +37,13 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
     const likedPosts = storage.getLikedPosts();
     setIsLiked(likedPosts.has(post.id));
   }, [post.id]);
+
+  // 해시태그 클릭 핸들러
+  const handleHashtagClick = (e: React.MouseEvent, hashtag: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    router.push(`/?search=${encodeURIComponent(hashtag)}`);
+  };
 
   const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -117,6 +126,26 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
           <p className="text-sm text-gray-700 line-clamp-3 leading-relaxed">
             {post.content}
           </p>
+
+          {/* 해시태그 */}
+          {post.hashtags && post.hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {post.hashtags.slice(0, 3).map((tag, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => handleHashtagClick(e, tag)}
+                  className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition-colors"
+                >
+                  {tag}
+                </button>
+              ))}
+              {post.hashtags.length > 3 && (
+                <span className="px-2 py-0.5 text-purple-600 text-xs font-medium">
+                  +{post.hashtags.length - 3}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* 인터랙션 */}
           <div className="flex items-center gap-4 pt-2">

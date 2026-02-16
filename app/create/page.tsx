@@ -21,6 +21,21 @@ export default function CreatePost() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hashtagInput, setHashtagInput] = useState(""); // 해시태그 입력
+
+  // 해시태그 추출 함수 (공백, 쉼표로 구분)
+  const extractHashtags = (input: string): string[] => {
+    if (!input.trim()) return [];
+
+    return input
+      .split(/[\s,]+/) // 공백이나 쉼표로 분리
+      .map((tag) => {
+        tag = tag.trim();
+        // #이 없으면 자동으로 추가
+        return tag && !tag.startsWith("#") ? `#${tag}` : tag;
+      })
+      .filter((tag) => tag.length > 1); // # 단독은 제외
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -82,9 +97,12 @@ export default function CreatePost() {
       }
 
       // 2. 게시물 등록 (fileId 포함)
+      const hashtags = extractHashtags(hashtagInput);
+
       await postAPI.createPost(userEmail, {
         content: content.trim(),
         fileId: fileId,
+        hashtags: hashtags.length > 0 ? hashtags : undefined,
         visibility: "PUBLIC" as any, // 기본값: 공개
       });
 
@@ -178,6 +196,38 @@ export default function CreatePost() {
             <div className="text-right text-sm text-gray-500">
               {content.length} / 500
             </div>
+          </div>
+
+          {/* 해시태그 입력 */}
+          <div className="space-y-2">
+            <Label
+              htmlFor="hashtags"
+              className="text-sm font-semibold text-gray-700"
+            >
+              🏷️ 해시태그
+            </Label>
+            <Input
+              id="hashtags"
+              value={hashtagInput}
+              onChange={(e) => setHashtagInput(e.target.value)}
+              placeholder="해시태그를 입력하세요 (예: 알고리즘 코딩테스트 or #알고리즘, #코딩테스트)"
+              className="border-2 border-purple-200 focus:border-purple-500 rounded-2xl"
+            />
+            <p className="text-xs text-gray-500">
+              💡 공백이나 쉼표로 구분하세요. #은 자동으로 추가됩니다.
+            </p>
+            {hashtagInput.trim() && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {extractHashtags(hashtagInput).map((tag, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 제출 버튼 */}

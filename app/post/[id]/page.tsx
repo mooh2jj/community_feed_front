@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -50,12 +52,32 @@ export default function PostDetailPage() {
   const [editFile, setEditFile] = useState<File | null>(null);
   const [editFilePreview, setEditFilePreview] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [editHashtagInput, setEditHashtagInput] = useState(""); // 해시태그 수정
 
   // 댓글 수정 모드 상태
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editCommentContent, setEditCommentContent] = useState("");
 
   const userEmail = storage.getCurrentUserEmail();
+
+  // 해시태그 클릭 핸들러
+  const handleHashtagClick = (hashtag: string) => {
+    router.push(`/?search=${encodeURIComponent(hashtag)}`);
+  };
+
+  // 해시태그 추출 함수 (공백, 쉼표로 구분)
+  const extractHashtags = (input: string): string[] => {
+    if (!input.trim()) return [];
+
+    return input
+      .split(/[\s,]+/) // 공백이나 쉼표로 분리
+      .map((tag) => {
+        tag = tag.trim();
+        // #이 없으면 자동으로 추가
+        return tag && !tag.startsWith("#") ? `#${tag}` : tag;
+      })
+      .filter((tag) => tag.length > 1); // # 단독은 제외
+  };
 
   useEffect(() => {
     loadPost();
@@ -247,6 +269,12 @@ export default function PostDetailPage() {
     setEditContent(post.content);
     setEditFile(null);
     setEditFilePreview(null);
+    // 해시태그가 있으면 로드 (# 제거하고 표시)
+    if (post.hashtags && post.hashtags.length > 0) {
+      setEditHashtagInput(post.hashtags.join(", "));
+    } else {
+      setEditHashtagInput("");
+    }
   };
 
   // 수정 취소
@@ -255,6 +283,7 @@ export default function PostDetailPage() {
     setEditContent(post?.content || "");
     setEditFile(null);
     setEditFilePreview(null);
+    setEditHashtagInput("");
   };
 
   // 게시글 수정 저장
@@ -277,15 +306,19 @@ export default function PostDetailPage() {
       }
 
       // 게시글 수정
+      const hashtags = extractHashtags(editHashtagInput);
+
       const result = await postAPI.updatePost(postId, userEmail, {
         content: editContent.trim(),
         uploadedFileId: fileId,
+        hashtags: hashtags.length > 0 ? hashtags : undefined,
       });
 
       setPost(result.data);
       setIsEditing(false);
       setEditFile(null);
       setEditFilePreview(null);
+      setEditHashtagInput("");
       toast.success("게시글이 수정되었습니다");
     } catch (error) {
       const errorMessage =
@@ -453,6 +486,34 @@ export default function PostDetailPage() {
                   )}
                 </div>
 
+                {/* 해시태그 입력 */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">
+                    🏷️ 해시태그
+                  </Label>
+                  <Input
+                    value={editHashtagInput}
+                    onChange={(e) => setEditHashtagInput(e.target.value)}
+                    placeholder="해시태그를 입력하세요 (예: 알고리즘 코딩테스트)"
+                    className="border-2 border-purple-200 focus:border-purple-500 rounded-2xl"
+                  />
+                  <p className="text-xs text-gray-500">
+                    💡 공백이나 쉼표로 구분하세요. #은 자동으로 추가됩니다.
+                  </p>
+                  {editHashtagInput.trim() && (
+                    <div className="flex flex-wrap gap-2">
+                      {extractHashtags(editHashtagInput).map((tag, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 {/* 수정 버튼 */}
                 <div className="flex gap-2">
                   <Button
@@ -476,9 +537,26 @@ export default function PostDetailPage() {
               </div>
             ) : (
               /* 일반 모드 - 내용 */
-              <p className="text-lg leading-relaxed text-gray-700 whitespace-pre-wrap">
-                {post.content}
-              </p>
+              <>
+                <p className="text-lg leading-relaxed text-gray-700 whitespace-pre-wrap">
+                  {post.content}
+                </p>
+
+                {/* 해시태그 표시 */}
+                {post.hashtags && post.hashtags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {post.hashtags.map((tag, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleHashtagClick(tag)}
+                        className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm font-medium hover:bg-purple-200 transition-colors cursor-pointer"
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
 
             {/* 인터랙션 */}

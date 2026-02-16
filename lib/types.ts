@@ -28,6 +28,7 @@ export interface PostResponse {
   likeCount: number;
   commentCount: number;
   viewCount: number;
+  hashtags?: string[]; // 해시태그 목록
   createdAt: string;
   modifiedAt: string;
 }
@@ -35,12 +36,15 @@ export interface PostResponse {
 // 댓글 응답
 export interface CommentResponse {
   id: number;
+  postId: number;
   content: string;
   authorName: string;
+  authorEmail: string; // 작성자 이메일
   authorProfileImageUrl?: string;
   likeCount: number;
   createdAt: string;
   modifiedAt: string;
+  likedByCurrentUser: boolean; // 현재 사용자가 좋아요 했는지
 }
 
 // 사용자 응답
@@ -82,12 +86,14 @@ export interface PostCreateRequest {
   content: string;
   visibility?: PostVisibility;
   fileId?: string; // 파일 ID (업로드된 파일의 UUID)
+  hashtags?: string[]; // 해시태그 목록
 }
 
 // 게시물 수정 요청
 export interface PostUpdateRequest {
   content: string;
   uploadedFileId?: string; // 파일 ID (업로드된 파일의 UUID)
+  hashtags?: string[]; // 해시태그 목록
 }
 
 // 파일 업로드 결과

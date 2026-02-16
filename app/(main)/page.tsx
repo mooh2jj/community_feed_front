@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import PostFeed from "@/components/PostFeed";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -18,7 +19,17 @@ type SortOption = "latest" | "popular" | "views";
  * MZ세대를 위한 스터디 인증 커뮤니티
  */
 export default function Home() {
+  const searchParams = useSearchParams();
   const [sortBy, setSortBy] = useState<SortOption>("latest");
+  const [initialSearch, setInitialSearch] = useState<string>("");
+
+  // URL에서 검색어 읽기
+  useEffect(() => {
+    const search = searchParams.get("search");
+    if (search) {
+      setInitialSearch(search);
+    }
+  }, [searchParams]);
 
   const sortOptions = [
     { value: "latest" as SortOption, label: "최신순", icon: faClock },
@@ -76,7 +87,7 @@ export default function Home() {
         </div>
 
         {/* 피드 */}
-        <PostFeed />
+        <PostFeed initialSearchKeyword={initialSearch} />
       </main>
     </div>
   );

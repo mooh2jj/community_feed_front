@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 interface PostFeedProps {
   sortBy?: "latest" | "views";
   onResetSort?: () => void;
+  initialSearchKeyword?: string; // 초기 검색어
 }
 
 /**
@@ -24,14 +25,23 @@ interface PostFeedProps {
 export default function PostFeed({
   sortBy = "latest",
   onResetSort,
+  initialSearchKeyword = "",
 }: PostFeedProps) {
   const [posts, setPosts] = useState<PostResponse[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [searchInput, setSearchInput] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState(initialSearchKeyword);
+  const [searchInput, setSearchInput] = useState(initialSearchKeyword);
   const observerTarget = useRef<HTMLDivElement>(null);
+
+  // initialSearchKeyword가 변경되면 검색 업데이트
+  useEffect(() => {
+    if (initialSearchKeyword) {
+      setSearchKeyword(initialSearchKeyword);
+      setSearchInput(initialSearchKeyword);
+    }
+  }, [initialSearchKeyword]);
 
   // sortBy 또는 searchKeyword 변경시 초기화
   useEffect(() => {
