@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import TiptapEditor from "@/components/TiptapEditor";
 import { faImage, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { postAPI, storage, fileAPI } from "@/lib/api";
 import { toast } from "sonner";
@@ -185,17 +185,11 @@ export default function CreatePost() {
             >
               📝 스터디 기록
             </Label>
-            <Textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+            <TiptapEditor
+              content={content}
+              onChange={setContent}
               placeholder="오늘 무엇을 공부했나요?&#10;예: 알고리즘 3문제 풀이 완료! 🔥"
-              className="min-h-[200px] text-base resize-none border-2 border-purple-200 focus:border-purple-500 rounded-2xl"
-              maxLength={500}
             />
-            <div className="text-right text-sm text-gray-500">
-              {content.length} / 500
-            </div>
           </div>
 
           {/* 해시태그 입력 */}

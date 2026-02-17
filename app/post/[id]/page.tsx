@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import TiptapEditor from "@/components/TiptapEditor";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowLeft,
@@ -444,12 +445,10 @@ export default function PostDetailPage() {
             {/* 수정 모드 */}
             {isEditing ? (
               <div className="space-y-4 p-4 bg-purple-50 rounded-2xl">
-                <Textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
+                <TiptapEditor
+                  content={editContent}
+                  onChange={setEditContent}
                   placeholder="무슨 생각을 하고 계신가요?"
-                  className="min-h-[150px] resize-none border-2 border-purple-200 focus:border-purple-500 rounded-2xl"
-                  maxLength={500}
                 />
 
                 {/* 파일 업로드 */}
@@ -538,9 +537,10 @@ export default function PostDetailPage() {
             ) : (
               /* 일반 모드 - 내용 */
               <>
-                <p className="text-lg leading-relaxed text-gray-700 whitespace-pre-wrap">
-                  {post.content}
-                </p>
+                <div
+                  className="prose prose-sm max-w-none text-gray-700"
+                  dangerouslySetInnerHTML={{ __html: post.content }}
+                />
 
                 {/* 해시태그 표시 */}
                 {post.hashtags && post.hashtags.length > 0 && (

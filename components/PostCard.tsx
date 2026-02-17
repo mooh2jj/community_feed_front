@@ -123,9 +123,10 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
           </div>
 
           {/* 내용 */}
-          <p className="text-sm text-gray-700 line-clamp-3 leading-relaxed">
-            {post.content}
-          </p>
+          <div
+            className="prose prose-sm max-w-none text-sm text-gray-700 line-clamp-3 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
 
           {/* 해시태그 */}
           {post.hashtags && post.hashtags.length > 0 && (
