@@ -2,42 +2,21 @@
 
 import { useState } from "react";
 import PostFeed from "@/components/PostFeed";
-import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faClock,
-  faFire,
-  faEye,
-  faStar,
-  faTimes,
-} from "@fortawesome/free-solid-svg-icons";
+import { faStar } from "@fortawesome/free-solid-svg-icons";
 import { storage } from "@/lib/api";
-
-type SortOption = "latest" | "popular" | "views";
 
 /**
  * 메인 피드 페이지
  * MZ세대를 위한 스터디 인증 커뮤니티
  */
 export default function Home() {
-  const [sortBy, setSortBy] = useState<SortOption>("latest");
   const [userEmail] = useState(() => {
     if (typeof window !== "undefined") {
       return storage.getCurrentUserEmail();
     }
     return "user1@test.com";
   });
-
-  const sortOptions = [
-    { value: "latest" as SortOption, label: "최신순", icon: faClock },
-    { value: "popular" as SortOption, label: "인기순", icon: faFire },
-    { value: "views" as SortOption, label: "조회순", icon: faEye },
-  ];
-
-  // 전체 초기화 (정렬 초기화)
-  const handleReset = () => {
-    setSortBy("latest");
-  };
 
   return (
     <div className="min-h-screen">
@@ -54,26 +33,6 @@ export default function Home() {
                 <p className="text-xs text-gray-500">스터디 인증 커뮤니티</p>
               </div>
             </div>
-
-            {/* 정렬 버튼 */}
-            <div className="flex items-center gap-2">
-              {sortOptions.map((option) => (
-                <Button
-                  key={option.value}
-                  variant={sortBy === option.value ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSortBy(option.value)}
-                  className={`transition-all duration-300 ${
-                    sortBy === option.value
-                      ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30"
-                      : "hover:border-purple-300"
-                  }`}
-                >
-                  <FontAwesomeIcon icon={option.icon} className="mr-2" />
-                  {option.label}
-                </Button>
-              ))}
-            </div>
           </div>
         </div>
       </header>
@@ -89,7 +48,7 @@ export default function Home() {
         </div>
 
         {/* 피드 */}
-        <PostFeed sortBy={sortBy} onResetSort={handleReset} />
+        <PostFeed />
       </main>
     </div>
   );
