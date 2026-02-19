@@ -19,6 +19,7 @@ import {
   faLink,
   faUndo,
   faRedo,
+  faHeading,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Lowlight 초기화 (코드 블록 문법 강조)
@@ -44,6 +45,17 @@ export default function TiptapEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3, 4, 5, 6], // 모든 헤딩 레벨 활성화
+        },
+        bulletList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
+        orderedList: {
+          keepMarks: true,
+          keepAttributes: false,
+        },
         codeBlock: false, // lowlight 버전 사용
       }),
       Placeholder.configure({
@@ -59,7 +71,7 @@ export default function TiptapEditor({
         lowlight,
         HTMLAttributes: {
           class:
-            "bg-gray-100 rounded-lg p-4 my-2 font-mono text-sm overflow-x-auto",
+            "bg-gray-900 rounded-lg p-4 my-2 font-mono text-sm overflow-x-auto",
         },
       }),
     ],
@@ -146,6 +158,66 @@ export default function TiptapEditor({
           title="Strikethrough"
         >
           <FontAwesomeIcon icon={faStrikethrough} />
+        </Button>
+
+        <div className="w-px h-8 bg-purple-300 mx-1" />
+
+        {/* 헤딩 */}
+        <Button
+          type="button"
+          size="sm"
+          variant={
+            editor.isActive("heading", { level: 1 }) ? "default" : "ghost"
+          }
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 1 }).run()
+          }
+          className={`h-8 w-10 p-0 text-xs font-bold ${
+            editor.isActive("heading", { level: 1 })
+              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              : ""
+          }`}
+          title="Heading 1"
+        >
+          H1
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          variant={
+            editor.isActive("heading", { level: 2 }) ? "default" : "ghost"
+          }
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
+          className={`h-8 w-10 p-0 text-xs font-bold ${
+            editor.isActive("heading", { level: 2 })
+              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              : ""
+          }`}
+          title="Heading 2"
+        >
+          H2
+        </Button>
+
+        <Button
+          type="button"
+          size="sm"
+          variant={
+            editor.isActive("heading", { level: 3 }) ? "default" : "ghost"
+          }
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
+          className={`h-8 w-10 p-0 text-xs font-bold ${
+            editor.isActive("heading", { level: 3 })
+              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              : ""
+          }`}
+          title="Heading 3"
+        >
+          H3
         </Button>
 
         <div className="w-px h-8 bg-purple-300 mx-1" />
@@ -266,9 +338,13 @@ export default function TiptapEditor({
       </div>
 
       {/* 도움말 */}
-      <p className="text-xs text-gray-500">
-        💡 Markdown 문법도 사용 가능합니다: **굵게**, *기울임*, `코드`, - 목록
-      </p>
+      <div className="text-xs text-gray-500 space-y-1">
+        <p>💡 Markdown 문법 사용 가능:</p>
+        <p className="pl-4">
+          **굵게** *기울임* `코드` # 제목1 ## 제목2 ### 제목3 - 목록 * 목록{" "}
+          {">"} 인용문 ```코드블록```
+        </p>
+      </div>
     </div>
   );
 }

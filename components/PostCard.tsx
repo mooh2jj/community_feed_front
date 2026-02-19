@@ -1,10 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import hljs from "highlight.js/lib/core";
+import javascript from "highlight.js/lib/languages/javascript";
+import typescript from "highlight.js/lib/languages/typescript";
+import python from "highlight.js/lib/languages/python";
+import java from "highlight.js/lib/languages/java";
+import bash from "highlight.js/lib/languages/bash";
+import json from "highlight.js/lib/languages/json";
+import xml from "highlight.js/lib/languages/xml";
+import css from "highlight.js/lib/languages/css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+// 언어 등록
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("typescript", typescript);
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("java", java);
+hljs.registerLanguage("bash", bash);
+hljs.registerLanguage("json", json);
+hljs.registerLanguage("xml", xml);
+hljs.registerLanguage("html", xml);
+hljs.registerLanguage("css", css);
 import {
   faHeart as faHeartSolid,
   faComment,
@@ -29,6 +49,7 @@ interface PostCardProps {
  */
 export default function PostCard({ post, onLikeChange }: PostCardProps) {
   const router = useRouter();
+  const contentRef = useRef<HTMLDivElement>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,6 +58,16 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
     const likedPosts = storage.getLikedPosts();
     setIsLiked(likedPosts.has(post.id));
   }, [post.id]);
+
+  // Syntax highlighting 적용
+  useEffect(() => {
+    if (contentRef.current) {
+      const codeBlocks = contentRef.current.querySelectorAll("pre code");
+      codeBlocks.forEach((block) => {
+        hljs.highlightElement(block as HTMLElement);
+      });
+    }
+  }, [post.content]);
 
   // 해시태그 클릭 핸들러
   const handleHashtagClick = (e: React.MouseEvent, hashtag: string) => {
@@ -89,7 +120,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
 
   return (
     <Link href={`/post/${post.id}`}>
-      <Card className="group overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20 hover:-translate-y-2 border-2 border-purple-100 hover:border-purple-300 bg-gradient-to-br from-white to-purple-50/30">
+      <Card className="group overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20 hover:-translate-y-2 border-2 border-purple-100 hover:border-purple-300 bg-gradient-to-br from-white to-purple-50/30 flex flex-col">
         {/* 이미지 - 항상 표시 (실제 이미지 또는 더미 이미지) */}
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100">
           <Image
@@ -103,7 +134,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
 
-        <div className="p-4 space-y-3">
+        <div className="p-4 space-y-3 h-[280px] flex flex-col">
           {/* 작성자 정보 */}
           <div className="flex items-center gap-3">
             <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-400 ring-offset-2">
@@ -124,18 +155,19 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
 
           {/* 내용 */}
           <div
-            className="prose prose-sm max-w-none text-sm text-gray-700 line-clamp-3 leading-relaxed"
+            ref={contentRef}
+            className="prose prose-sm max-w-none text-sm text-gray-700 line-clamp-3 leading-relaxed flex-1"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
 
           {/* 해시태그 */}
           {post.hashtags && post.hashtags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 min-h-[28px]">
               {post.hashtags.slice(0, 3).map((tag, index) => (
                 <button
                   key={index}
                   onClick={(e) => handleHashtagClick(e, tag)}
-                  className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition-colors"
+                  className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium hover:bg-purple-200 transition-colors h-fit"
                 >
                   {tag}
                 </button>
@@ -149,7 +181,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
           )}
 
           {/* 인터랙션 */}
-          <div className="flex items-center gap-4 pt-2">
+          <div className="flex items-center gap-4 pt-2 mt-auto">
             <button
               onClick={handleLike}
               disabled={isLoading}

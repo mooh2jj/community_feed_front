@@ -3,7 +3,27 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
+import hljs from "highlight.js/lib/core";
+import javascript from "highlight.js/lib/languages/javascript";
+import typescript from "highlight.js/lib/languages/typescript";
+import python from "highlight.js/lib/languages/python";
+import java from "highlight.js/lib/languages/java";
+import bash from "highlight.js/lib/languages/bash";
+import json from "highlight.js/lib/languages/json";
+import xml from "highlight.js/lib/languages/xml";
+import css from "highlight.js/lib/languages/css";
 import { Button } from "@/components/ui/button";
+
+// 언어 등록
+hljs.registerLanguage("javascript", javascript);
+hljs.registerLanguage("typescript", typescript);
+hljs.registerLanguage("python", python);
+hljs.registerLanguage("java", java);
+hljs.registerLanguage("bash", bash);
+hljs.registerLanguage("json", json);
+hljs.registerLanguage("xml", xml);
+hljs.registerLanguage("html", xml);
+hljs.registerLanguage("css", css);
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +58,7 @@ export default function PostDetailPage() {
   const router = useRouter();
   const postId = Number(params.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const [post, setPost] = useState<PostResponse | null>(null);
   const [comments, setComments] = useState<CommentResponse[]>([]);
@@ -88,6 +109,16 @@ export default function PostDetailPage() {
     const likedPosts = storage.getLikedPosts();
     setIsLiked(likedPosts.has(postId));
   }, [postId]);
+
+  // Syntax highlighting 적용
+  useEffect(() => {
+    if (contentRef.current && post && !isEditing) {
+      const codeBlocks = contentRef.current.querySelectorAll("pre code");
+      codeBlocks.forEach((block) => {
+        hljs.highlightElement(block as HTMLElement);
+      });
+    }
+  }, [post?.content, isEditing]);
 
   const loadPost = async () => {
     try {
@@ -538,6 +569,7 @@ export default function PostDetailPage() {
               /* 일반 모드 - 내용 */
               <>
                 <div
+                  ref={contentRef}
                   className="prose prose-sm max-w-none text-gray-700"
                   dangerouslySetInnerHTML={{ __html: post.content }}
                 />
