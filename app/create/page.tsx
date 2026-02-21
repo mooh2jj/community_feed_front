@@ -190,6 +190,80 @@ export default function CreatePost() {
               onChange={setContent}
               placeholder="오늘 무엇을 공부했나요?&#10;예: 알고리즘 3문제 풀이 완료! 🔥"
             />
+            {/* 마크다운 단축키 힌트 */}
+            <div className="rounded-2xl bg-purple-50 border border-purple-100 px-4 py-3 space-y-3">
+              <p className="text-xs font-semibold text-purple-700">
+                💡 마크다운 단축키 — 입력 후{" "}
+                <kbd className="bg-white border border-purple-200 rounded px-1 text-purple-600">
+                  Space
+                </kbd>{" "}
+                를 누르세요!
+              </p>
+
+              {/* 제목 */}
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-purple-500 uppercase tracking-wide">
+                  제목
+                </p>
+                <div className="grid grid-cols-3 gap-1 text-xs text-gray-600">
+                  {[
+                    { key: "#", label: "제목 1" },
+                    { key: "##", label: "제목 2" },
+                    { key: "###", label: "제목 3" },
+                  ].map(({ key, label }) => (
+                    <span key={key} className="flex items-center gap-1.5">
+                      <code className="bg-white border border-purple-200 rounded px-1 text-purple-600 shrink-0">
+                        {key}
+                      </code>
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* 텍스트 서식 */}
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-purple-500 uppercase tracking-wide">
+                  텍스트 서식
+                </p>
+                <div className="grid grid-cols-3 gap-1 text-xs text-gray-600">
+                  {[
+                    { key: "**텍스트**", label: "굵게" },
+                    { key: "*텍스트*", label: "기울임" },
+                    { key: "`코드`", label: "인라인 코드" },
+                  ].map(({ key, label }) => (
+                    <span key={key} className="flex items-center gap-1.5">
+                      <code className="bg-white border border-purple-200 rounded px-1 text-purple-600 shrink-0">
+                        {key}
+                      </code>
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* 목록 / 인용 / 코드블록 */}
+              <div className="space-y-1">
+                <p className="text-[11px] font-semibold text-purple-500 uppercase tracking-wide">
+                  목록 · 인용 · 코드
+                </p>
+                <div className="grid grid-cols-3 gap-1 text-xs text-gray-600">
+                  {[
+                    { key: "- 항목", label: "불릿 목록" },
+                    { key: "* 항목", label: "불릿 목록" },
+                    { key: "> 텍스트", label: "인용문" },
+                    { key: "```", label: "코드 블록" },
+                  ].map(({ key, label }) => (
+                    <span key={key} className="flex items-center gap-1.5">
+                      <code className="bg-white border border-purple-200 rounded px-1 text-purple-600 shrink-0">
+                        {key}
+                      </code>
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* 해시태그 입력 */}

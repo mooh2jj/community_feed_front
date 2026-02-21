@@ -338,13 +338,7 @@ export default function TiptapEditor({
       </div>
 
       {/* 도움말 */}
-      <div className="text-xs text-gray-500 space-y-1">
-        <p>💡 Markdown 문법 사용 가능:</p>
-        <p className="pl-4">
-          **굵게** *기울임* `코드` # 제목1 ## 제목2 ### 제목3 - 목록 * 목록{" "}
-          {">"} 인용문 ```코드블록```
-        </p>
-      </div>
+      <div className="text-xs text-gray-500 space-y-1"></div>
     </div>
   );
 }
