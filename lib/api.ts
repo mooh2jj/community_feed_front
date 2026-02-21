@@ -60,7 +60,12 @@ async function fetchAPI<T>(
       .json()
       .catch(() => ({ message: "오류가 발생했습니다." }));
     console.error("❌ API 에러:", error);
-    throw new Error(error.message || `HTTP error! status: ${response.status}`);
+    // data 필드에 상세 메시지가 있으면 우선 표시, 없으면 message 사용
+    throw new Error(
+      (typeof error.data === "string" && error.data) ||
+        error.message ||
+        `HTTP error! status: ${response.status}`,
+    );
   }
 
   const data = await response.json();
@@ -346,8 +351,11 @@ export const fileAPI = {
       const error = await response
         .json()
         .catch(() => ({ message: "파일 업로드에 실패했습니다." }));
+      // data 필드에 상세 메시지가 있으면 우선 표시, 없으면 message 사용
       throw new Error(
-        error.message || `HTTP error! status: ${response.status}`,
+        (typeof error.data === "string" && error.data) ||
+          error.message ||
+          `HTTP error! status: ${response.status}`,
       );
     }
 
