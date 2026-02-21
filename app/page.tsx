@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import PostFeed from "@/components/PostFeed";
 import { Button } from "@/components/ui/button";
@@ -10,26 +10,28 @@ import {
   faFire,
   faEye,
   faStar,
+  faSpinner,
+  type IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 
 type SortOption = "latest" | "popular" | "views";
 
+const sortOptions: { value: SortOption; label: string; icon: IconDefinition }[] = [
+  { value: "latest", label: "최신순", icon: faClock },
+  { value: "popular", label: "인기순", icon: faFire },
+  { value: "views", label: "조회순", icon: faEye },
+];
+
 /**
- * 메인 피드 페이지
- * MZ세대를 위한 스터디 인증 커뮤니티
+ * useSearchParams를 사용하는 내부 컴포넌트
+ * Suspense 경계 안에서만 사용 가능
  */
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const [sortBy, setSortBy] = useState<SortOption>("latest");
 
-  // URL 파라미터에서 검색어 직접 읽기 (effect 불필요)
+  // URL 파라미터에서 검색어 직접 읽기
   const initialSearch = searchParams.get("search") ?? "";
-
-  const sortOptions = [
-    { value: "latest" as SortOption, label: "최신순", icon: faClock },
-    { value: "popular" as SortOption, label: "인기순", icon: faFire },
-    { value: "views" as SortOption, label: "조회순", icon: faEye },
-  ];
 
   return (
     <div className="min-h-screen">
@@ -89,5 +91,26 @@ export default function Home() {
         />
       </main>
     </div>
+  );
+}
+
+/**
+ * 메인 피드 페이지
+ * useSearchParams 사용을 위해 Suspense로 감싸서 빌드 오류 방지
+ */
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <FontAwesomeIcon
+            icon={faSpinner}
+            className="text-4xl text-purple-600 animate-spin"
+          />
+        </div>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   );
 }
