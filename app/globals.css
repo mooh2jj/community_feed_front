@@ -449,6 +449,24 @@
   text-decoration: line-through;
 }
 
+/* 에디터 내 인라인 이미지 */
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 0.5rem 0;
+  display: block;
+}
+
+/* 게시글 렌더링 시 인라인 이미지 */
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 0.5rem 0;
+  display: block;
+}
+
 /* Typography 스타일 (prose 클래스) */
 .prose {
   max-width: 100%;

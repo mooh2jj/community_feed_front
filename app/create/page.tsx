@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import TiptapEditor from "@/components/TiptapEditor";
 import { faImage, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { postAPI, storage, fileAPI } from "@/lib/api";
+import { uploadInlineImages } from "@/lib/imageUploadUtils";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -22,6 +23,9 @@ export default function CreatePost() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hashtagInput, setHashtagInput] = useState(""); // 해시태그 입력
+
+  // 에디터 내 미업로드 이미지 파일 보관 (data URL → File)
+  const pendingFilesRef = useRef<Map<string, File>>(new Map());
 
   // 해시태그 추출 함수 (공백, 쉼표로 구분)
   const extractHashtags = (input: string): string[] => {
@@ -96,11 +100,17 @@ export default function CreatePost() {
         }
       }
 
-      // 2. 게시물 등록 (fileId 포함)
+      // 2. 에디터 내 인라인 이미지 업로드 후 서버 URL로 교체
+      const finalContent = await uploadInlineImages(
+        content,
+        pendingFilesRef.current,
+      );
+
+      // 3. 게시물 등록 (fileId 포함)
       const hashtags = extractHashtags(hashtagInput);
 
       await postAPI.createPost(userEmail, {
-        content: content.trim(),
+        content: finalContent.trim(),
         fileId: fileId,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
         visibility: "PUBLIC" as any, // 기본값: 공개
@@ -189,6 +199,7 @@ export default function CreatePost() {
               content={content}
               onChange={setContent}
               placeholder="오늘 무엇을 공부했나요?&#10;예: 알고리즘 3문제 풀이 완료! 🔥"
+              pendingFilesRef={pendingFilesRef}
             />
             {/* 마크다운 단축키 힌트 */}
             <div className="rounded-2xl bg-purple-50 border border-purple-100 px-4 py-3 space-y-3">

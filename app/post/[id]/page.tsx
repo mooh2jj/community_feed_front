@@ -48,6 +48,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import { uploadInlineImages } from "@/lib/imageUploadUtils";
 
 /**
  * 게시물 상세 페이지
@@ -59,6 +60,8 @@ export default function PostDetailPage() {
   const postId = Number(params.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  // 수정 모드 에디터 내 미업로드 이미지 보관 (data URL → File)
+  const editPendingFilesRef = useRef<Map<string, File>>(new Map());
 
   const [post, setPost] = useState<PostResponse | null>(null);
   const [comments, setComments] = useState<CommentResponse[]>([]);
@@ -317,6 +320,8 @@ export default function PostDetailPage() {
     setEditFile(null);
     setEditFilePreview(null);
     setEditHashtagInput("");
+    // 취소 시 미업로드 이미지 파일 정리
+    editPendingFilesRef.current.clear();
   };
 
   // 게시글 수정 저장
@@ -338,11 +343,17 @@ export default function PostDetailPage() {
         }
       }
 
+      // 에디터 내 인라인 이미지 업로드 후 서버 URL로 교체
+      const finalContent = await uploadInlineImages(
+        editContent,
+        editPendingFilesRef.current,
+      );
+
       // 게시글 수정
       const hashtags = extractHashtags(editHashtagInput);
 
       const result = await postAPI.updatePost(postId, userEmail, {
-        content: editContent.trim(),
+        content: finalContent.trim(),
         uploadedFileId: fileId,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
       });
@@ -481,6 +492,7 @@ export default function PostDetailPage() {
                   content={editContent}
                   onChange={setEditContent}
                   placeholder="무슨 생각을 하고 계신가요?"
+                  pendingFilesRef={editPendingFilesRef}
                 />
 
                 {/* 파일 업로드 */}
