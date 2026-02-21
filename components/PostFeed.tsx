@@ -5,10 +5,43 @@ import { PostResponse } from "@/lib/types";
 import { postAPI } from "@/lib/api";
 import PostCard from "./PostCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faTimes, faClock } from "@fortawesome/free-solid-svg-icons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import PostCardSkeleton from "./PostCardSkeleton";
+
+// ─── 최근 검색어 localStorage 유틸리티 ─────────────────────────────────────
+const RECENT_SEARCHES_KEY = "recentSearches";
+const MAX_RECENT = 8;
+
+const recentSearchStorage = {
+  /** localStorage에서 최근 검색어 목록 읽기 */
+  get: (): string[] => {
+    if (typeof window === "undefined") return [];
+    try {
+      return JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) ?? "[]");
+    } catch {
+      return [];
+    }
+  },
+  /** 검색어 추가 (중복 제거 후 맨 앞 삽입, 최대 MAX_RECENT 개) */
+  add: (keyword: string): string[] => {
+    const prev = recentSearchStorage.get().filter((k) => k !== keyword);
+    const next = [keyword, ...prev].slice(0, MAX_RECENT);
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+    return next;
+  },
+  /** 특정 검색어 삭제 */
+  remove: (keyword: string): string[] => {
+    const next = recentSearchStorage.get().filter((k) => k !== keyword);
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+    return next;
+  },
+  /** 전체 삭제 */
+  clear: (): void => {
+    localStorage.setItem(RECENT_SEARCHES_KEY, "[]");
+  },
+};
 
 interface PostFeedProps {
   sortBy?: "latest" | "popular" | "views";
@@ -30,7 +63,26 @@ export default function PostFeed({
   const [hasMore, setHasMore] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState(initialSearchKeyword);
   const [searchInput, setSearchInput] = useState(initialSearchKeyword);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
+  const searchWrapperRef = useRef<HTMLDivElement>(null);
+
+  // 마운트 시 최근 검색어 로드
+  useEffect(() => {
+    setRecentSearches(recentSearchStorage.get());
+  }, []);
+
+  // 검색창 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!searchWrapperRef.current?.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // initialSearchKeyword가 변경되면 검색 업데이트 (# 포함 시 제거)
   useEffect(() => {
@@ -57,6 +109,7 @@ export default function PostFeed({
     if (page === 1 && posts.length === 0) {
       loadMore();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy, searchKeyword]); // sortBy 또는 searchKeyword 변경 시 리로드
 
   // 게시물 로드
@@ -137,22 +190,39 @@ export default function PostFeed({
     };
   }, [loadMore, hasMore, loading]);
 
-  // 검색 실행
-  const handleSearch = () => {
-    setSearchKeyword(searchInput.trim());
+  // 검색 실행 - 키워드 저장 후 검색
+  const handleSearch = (keyword?: string) => {
+    const target = (keyword ?? searchInput).trim();
+    if (!target) return;
+    setSearchInput(target);
+    setSearchKeyword(target);
+    setShowDropdown(false);
+    setRecentSearches(recentSearchStorage.add(target));
   };
 
   // 검색 초기화
   const handleClearSearch = () => {
     setSearchInput("");
     setSearchKeyword("");
+    setShowDropdown(false);
   };
 
-  // Enter 키 처리
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
+  // 최근 검색어 개별 삭제
+  const handleRemoveRecent = (e: React.MouseEvent, keyword: string) => {
+    e.stopPropagation();
+    setRecentSearches(recentSearchStorage.remove(keyword));
+  };
+
+  // 최근 검색어 전체 삭제
+  const handleClearAllRecent = () => {
+    recentSearchStorage.clear();
+    setRecentSearches([]);
+  };
+
+  // 키보드 처리 (Enter: 검색, Escape: 드롭다운 닫기)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleSearch();
+    if (e.key === "Escape") setShowDropdown(false);
   };
 
   return (
@@ -160,14 +230,15 @@ export default function PostFeed({
       {/* 검색창 및 초기화 - 항상 표시 */}
       <div className="mb-6 space-y-4">
         <div className="flex items-center gap-3">
-          {/* 검색창 */}
-          <div className="relative flex-1 max-w-2xl mx-auto">
+          {/* 검색창 + 최근 검색어 드롭다운 */}
+          <div ref={searchWrapperRef} className="relative flex-1 max-w-2xl mx-auto">
             <Input
               type="text"
               placeholder="게시물 검색... (예: 알고리즘, SQL)"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setShowDropdown(true)}
               className="pl-12 pr-24 py-6 text-base border-2 border-purple-200 focus:border-purple-500 rounded-2xl"
             />
             <FontAwesomeIcon
@@ -185,11 +256,56 @@ export default function PostFeed({
               </Button>
             )}
             <Button
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-linear-to-r from-purple-600 to-pink-600"
             >
               검색
             </Button>
+
+            {/* 최근 검색어 드롭다운 */}
+            {showDropdown && recentSearches.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-purple-100 rounded-2xl shadow-xl z-50 overflow-hidden">
+                {/* 헤더 */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-purple-50">
+                  <span className="text-sm font-semibold text-gray-500">
+                    최근 검색어
+                  </span>
+                  <button
+                    onClick={handleClearAllRecent}
+                    className="text-xs text-purple-400 hover:text-purple-600 transition-colors"
+                  >
+                    전체 삭제
+                  </button>
+                </div>
+
+                {/* 검색어 목록 */}
+                <ul>
+                  {recentSearches.map((keyword) => (
+                    <li
+                      key={keyword}
+                      onClick={() => handleSearch(keyword)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 cursor-pointer group transition-colors"
+                    >
+                      <FontAwesomeIcon
+                        icon={faClock}
+                        className="text-gray-300 text-sm shrink-0"
+                      />
+                      <span className="flex-1 text-sm text-gray-700 truncate">
+                        {keyword}
+                      </span>
+                      {/* 호버 시 표시되는 개별 삭제 버튼 */}
+                      <button
+                        onClick={(e) => handleRemoveRecent(e, keyword)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-gray-500 transition-opacity p-1"
+                        aria-label={`${keyword} 삭제`}
+                      >
+                        <FontAwesomeIcon icon={faTimes} className="text-xs" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* 정렬 및 검색 초기화 버튼 - 검색창 오른쪽 */}
