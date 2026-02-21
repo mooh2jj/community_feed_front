@@ -302,7 +302,7 @@ export default function CreatePost() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-6 text-lg font-bold rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-3d transition-all duration-300 hover:scale-105"
+            className="w-full py-6 text-lg font-bold rounded-2xl bg-purple-600 hover:bg-purple-700 shadow-3d transition-all duration-300 hover:scale-105"
           >
             {isSubmitting ? "등록 중..." : "🎉 인증 완료!"}
           </Button>

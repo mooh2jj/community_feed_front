@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body
-        className={`${pretendard.variable} antialiased min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-white`}
+        className={`${pretendard.variable} antialiased min-h-screen bg-[#fafafa]`}
       >
         <div className="pb-20">{children}</div>
         <Navigation />

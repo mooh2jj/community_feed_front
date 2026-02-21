@@ -46,73 +46,129 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+/**
+ * ━━━ Electric Indigo 브랜드 팔레트 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * 남성 MZ 선호 조사 기반 (Discord · GitHub · Linear · Toss 레퍼런스)
+ *
+ * purple-* → Electric Indigo (신뢰·전문·집중감)
+ * pink-*   → Electric Cyan  (시원함·활기·보조 액센트)
+ *
+ * 컴포넌트 파일 수정 없이 토큰 재정의만으로 전체 적용됩니다.
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+@theme {
+  /* purple → Indigo 스케일 */
+  --color-purple-50: #eef2ff;
+  --color-purple-100: #e0e7ff;
+  --color-purple-200: #c7d2fe;
+  --color-purple-300: #a5b4fc;
+  --color-purple-400: #818cf8;
+  --color-purple-500: #6366f1;
+  --color-purple-600: #4f46e5; /* Primary CTA */
+  --color-purple-700: #4338ca;
+  --color-purple-800: #3730a3;
+  --color-purple-900: #312e81;
+
+  /* pink → Cyan 스케일 */
+  --color-pink-50: #ecfeff;
+  --color-pink-100: #cffafe;
+  --color-pink-200: #a5f3fc;
+  --color-pink-300: #67e8f9;
+  --color-pink-400: #22d3ee;
+  --color-pink-500: #06b6d4; /* Secondary accent */
+  --color-pink-600: #0891b2;
+  --color-pink-700: #0e7490;
+  --color-pink-800: #155e75;
+  --color-pink-900: #164e63;
+}
+
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
+
+  /* 배경 / 텍스트 */
+  --background: #fafafa; /* 눈 피로 없는 오프화이트 */
+  --foreground: #111827; /* Headline: 딥 차콜 */
+
+  /* 카드 / 팝오버 */
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --popover: #ffffff;
+  --popover-foreground: #111827;
+
+  /* Primary: Electric Indigo CTA */
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+
+  /* Secondary: 연 인디고 서피스 */
+  --secondary: #eef2ff;
+  --secondary-foreground: #4f46e5;
+
+  /* Muted */
+  --muted: #e0e7ff;
+  --muted-foreground: #6366f1;
+
+  /* Accent: Cyan 서피스 */
+  --accent: #cffafe;
+  --accent-foreground: #0891b2;
+
+  /* 위험 */
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
+
+  /* 보더 / 인풋 / 링 */
+  --border: #c7d2fe; /* indigo-200 */
+  --input: #c7d2fe;
+  --ring: #4f46e5; /* 포커스 링 = 브랜드 컬러 */
+
+  /* 차트 */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
+
+  /* 사이드바 */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #111827;
+  --sidebar-primary: #4f46e5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eef2ff;
+  --sidebar-accent-foreground: #4f46e5;
+  --sidebar-border: #c7d2fe;
+  --sidebar-ring: #4f46e5;
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #0f172a; /* slate-900: 딥 다크 */
+  --foreground: #f1f5f9;
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
+  --popover: #1e293b;
+  --popover-foreground: #f1f5f9;
+  --primary: #6366f1; /* 다크모드에서 밝은 인디고 */
+  --primary-foreground: #ffffff;
+  --secondary: #1e1b4b; /* 딥 인디고 서피스 */
+  --secondary-foreground: #a5b4fc;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #164e63;
+  --accent-foreground: #67e8f9;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
+  --ring: #6366f1;
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.552 0.016 285.938);
+  --sidebar: #1e293b;
+  --sidebar-foreground: #f1f5f9;
+  --sidebar-primary: #6366f1;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e1b4b;
+  --sidebar-accent-foreground: #a5b4fc;
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: #6366f1;
 }
 
 @layer base {
@@ -133,24 +189,27 @@
 
 /* 커스텀 유틸리티 */
 @layer utilities {
+  /* 솔리드 브랜드 배경 (그라디언트 없음 — 단색 일관성) */
   .gradient-primary {
-    @apply bg-gradient-to-r from-purple-600 to-pink-600;
+    background-color: #4f46e5;
   }
 
+  /* 브랜드 텍스트 색상 */
   .gradient-text {
-    @apply text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600;
+    color: #4f46e5;
   }
 
+  /* Electric Indigo 기반 3D 그림자 */
   .shadow-3d {
     box-shadow:
-      0 10px 25px -5px rgba(139, 92, 246, 0.3),
-      0 20px 40px -10px rgba(236, 72, 153, 0.2);
+      0 10px 25px -5px rgba(79, 70, 229, 0.28),
+      0 20px 40px -10px rgba(79, 70, 229, 0.15);
   }
 
   .shadow-3d-sm {
     box-shadow:
-      0 4px 12px -2px rgba(139, 92, 246, 0.2),
-      0 8px 20px -5px rgba(236, 72, 153, 0.15);
+      0 4px 12px -2px rgba(79, 70, 229, 0.18),
+      0 8px 20px -5px rgba(79, 70, 229, 0.1);
   }
 }
 
@@ -196,12 +255,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #8b5cf6, #ec4899);
+  background: #4f46e5; /* Electric Indigo 단색 스크롤바 */
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #7c3aed, #db2777);
+  background: #4338ca;
 }
 
 /* 반응형 텍스트 */
@@ -256,7 +315,7 @@
 }
 
 .ProseMirror blockquote {
-  border-left: 4px solid #9333ea;
+  border-left: 4px solid #a5b4fc; /* indigo-300 */
   padding-left: 1rem;
   margin: 1rem 0;
   color: #6b7280;
@@ -264,12 +323,12 @@
 }
 
 .ProseMirror code {
-  background-color: #f3f4f6;
+  background-color: #eef2ff; /* indigo-50 */
   border-radius: 0.25rem;
   padding: 0.125rem 0.375rem;
   font-family: monospace;
   font-size: 0.875rem;
-  color: #ec4899;
+  color: #0891b2; /* cyan-600: 코드 강조 */
 }
 
 .ProseMirror pre {
@@ -369,13 +428,13 @@
 }
 
 .ProseMirror a {
-  color: #9333ea;
+  color: #4f46e5; /* indigo-600 */
   text-decoration: underline;
   cursor: pointer;
 }
 
 .ProseMirror a:hover {
-  color: #7e22ce;
+  color: #4338ca; /* indigo-700 */
 }
 
 .ProseMirror strong {
@@ -424,7 +483,7 @@
 }
 
 .prose blockquote {
-  border-left: 4px solid #9333ea;
+  border-left: 4px solid #a5b4fc; /* indigo-300 */
   padding-left: 1rem;
   margin: 0.75rem 0;
   color: #6b7280;
@@ -432,12 +491,12 @@
 }
 
 .prose code {
-  background-color: #f3f4f6;
+  background-color: #eef2ff; /* indigo-50 */
   border-radius: 0.25rem;
   padding: 0.125rem 0.375rem;
   font-family: monospace;
   font-size: 0.875em;
-  color: #ec4899;
+  color: #0891b2; /* cyan-600 */
 }
 
 .prose pre {
@@ -538,12 +597,12 @@
 }
 
 .prose a {
-  color: #9333ea;
+  color: #4f46e5; /* indigo-600 */
   text-decoration: underline;
 }
 
 .prose a:hover {
-  color: #7e22ce;
+  color: #4338ca; /* indigo-700 */
 }
 
 .prose h1,

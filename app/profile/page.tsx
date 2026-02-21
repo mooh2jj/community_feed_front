@@ -194,7 +194,7 @@ export default function ProfilePage() {
 
                 <Button
                   onClick={handleSaveEmail}
-                  className="w-full py-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg"
+                  className="w-full py-6 bg-purple-600 hover:bg-purple-700 shadow-lg"
                 >
                   <FontAwesomeIcon icon={faSave} className="mr-2" />
                   로그인

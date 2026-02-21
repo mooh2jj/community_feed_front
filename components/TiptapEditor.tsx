@@ -122,7 +122,7 @@ export default function TiptapEditor({
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={`h-8 w-8 p-0 ${
             editor.isActive("bold")
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              ? "bg-purple-600 text-white"
               : ""
           }`}
           title="Bold"
@@ -137,7 +137,7 @@ export default function TiptapEditor({
           onClick={() => editor.chain().focus().toggleItalic().run()}
           className={`h-8 w-8 p-0 ${
             editor.isActive("italic")
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              ? "bg-purple-600 text-white"
               : ""
           }`}
           title="Italic"
@@ -152,7 +152,7 @@ export default function TiptapEditor({
           onClick={() => editor.chain().focus().toggleStrike().run()}
           className={`h-8 w-8 p-0 ${
             editor.isActive("strike")
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              ? "bg-purple-600 text-white"
               : ""
           }`}
           title="Strikethrough"
@@ -174,7 +174,7 @@ export default function TiptapEditor({
           }
           className={`h-8 w-10 p-0 text-xs font-bold ${
             editor.isActive("heading", { level: 1 })
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              ? "bg-purple-600 text-white"
               : ""
           }`}
           title="Heading 1"
@@ -193,7 +193,7 @@ export default function TiptapEditor({
           }
           className={`h-8 w-10 p-0 text-xs font-bold ${
             editor.isActive("heading", { level: 2 })
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              ? "bg-purple-600 text-white"
               : ""
           }`}
           title="Heading 2"
@@ -212,7 +212,7 @@ export default function TiptapEditor({
           }
           className={`h-8 w-10 p-0 text-xs font-bold ${
             editor.isActive("heading", { level: 3 })
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              ? "bg-purple-600 text-white"
               : ""
           }`}
           title="Heading 3"
@@ -230,7 +230,7 @@ export default function TiptapEditor({
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           className={`h-8 w-8 p-0 ${
             editor.isActive("bulletList")
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              ? "bg-purple-600 text-white"
               : ""
           }`}
           title="Bullet List"
@@ -245,7 +245,7 @@ export default function TiptapEditor({
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           className={`h-8 w-8 p-0 ${
             editor.isActive("orderedList")
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              ? "bg-purple-600 text-white"
               : ""
           }`}
           title="Ordered List"
@@ -263,7 +263,7 @@ export default function TiptapEditor({
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           className={`h-8 w-8 p-0 ${
             editor.isActive("blockquote")
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              ? "bg-purple-600 text-white"
               : ""
           }`}
           title="Quote"
@@ -278,7 +278,7 @@ export default function TiptapEditor({
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
           className={`h-8 w-8 p-0 ${
             editor.isActive("codeBlock")
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              ? "bg-purple-600 text-white"
               : ""
           }`}
           title="Code Block"
@@ -296,7 +296,7 @@ export default function TiptapEditor({
           onClick={setLink}
           className={`h-8 w-8 p-0 ${
             editor.isActive("link")
-              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+              ? "bg-purple-600 text-white"
               : ""
           }`}
           title="Insert Link"

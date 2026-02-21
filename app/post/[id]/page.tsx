@@ -401,7 +401,7 @@ export default function PostDetailPage() {
     : `https://picsum.photos/seed/${post.id}/1200/800`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-white">
+    <div className="min-h-screen bg-[#fafafa]">
       {/* 헤더 */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-purple-100">
         <div className="max-w-screen-lg mx-auto px-4 py-4">
@@ -418,7 +418,7 @@ export default function PostDetailPage() {
       <main className="max-w-screen-lg mx-auto px-4 py-6">
         <div className="bg-white rounded-3xl border-2 border-purple-100 shadow-xl overflow-hidden">
           {/* 이미지 - 항상 표시 (실제 이미지 또는 더미 이미지) */}
-          <div className="relative aspect-video bg-gradient-to-br from-purple-100 to-pink-100">
+          <div className="relative aspect-video bg-purple-50">
             <Image
               src={displayImageUrl}
               alt={post.content}
@@ -550,7 +550,7 @@ export default function PostDetailPage() {
                   <Button
                     onClick={handleSaveEdit}
                     disabled={isUpdating}
-                    className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    className="flex-1 bg-purple-600 hover:bg-purple-700"
                   >
                     <FontAwesomeIcon icon={faSave} className="mr-2" />
                     {isUpdating ? "저장 중..." : "저장"}
@@ -598,7 +598,7 @@ export default function PostDetailPage() {
                 onClick={handleLike}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${
                   isLiked
-                    ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/50"
+                    ? "bg-purple-600 text-white shadow-lg shadow-purple-500/50"
                     : "bg-gray-100 text-gray-600 hover:bg-purple-100 hover:text-purple-600"
                 }`}
               >
@@ -632,7 +632,7 @@ export default function PostDetailPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                className="px-6 bg-purple-600 hover:bg-purple-700"
               >
                 <FontAwesomeIcon icon={faPaperPlane} />
               </Button>
@@ -732,7 +732,7 @@ export default function PostDetailPage() {
                               <Button
                                 onClick={() => handleUpdateComment(comment.id)}
                                 size="sm"
-                                className="h-8 px-3 text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                                className="h-8 px-3 text-xs bg-purple-600 hover:bg-purple-700"
                               >
                                 <FontAwesomeIcon
                                   icon={faSave}

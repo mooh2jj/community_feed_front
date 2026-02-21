@@ -162,7 +162,7 @@ export default function RankingPodium({ users }: RankingPodiumProps) {
               key={user.email}
               className="flex items-center gap-4 p-4 bg-white rounded-2xl border-2 border-purple-100 hover:border-purple-300 transition-all duration-300 hover:shadow-lg"
             >
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 text-white font-bold text-lg">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-purple-600 text-white font-bold text-lg">
                 {idx + 4}
               </div>
 
@@ -175,7 +175,7 @@ export default function RankingPodium({ users }: RankingPodiumProps) {
                     className="object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold">
+                  <div className="w-full h-full bg-purple-600 flex items-center justify-center text-white font-bold">
                     {user.name[0]}
                   </div>
                 )}

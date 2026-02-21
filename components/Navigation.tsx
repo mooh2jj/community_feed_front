@@ -36,7 +36,7 @@ export default function Navigation() {
                 href={item.href}
                 className={`flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 ${
                   isActive
-                    ? "text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 scale-110"
+                    ? "text-purple-600 scale-110"
                     : "text-gray-500 hover:text-purple-500 hover:scale-105"
                 }`}
               >
@@ -46,7 +46,7 @@ export default function Navigation() {
                 />
                 <span className="text-xs font-semibold">{item.label}</span>
                 {isActive && (
-                  <div className="absolute bottom-0 w-1 h-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 animate-pulse" />
+                  <div className="absolute bottom-0 w-1 h-1 rounded-full bg-purple-600 animate-pulse" />
                 )}
               </Link>
             );
