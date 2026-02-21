@@ -5,13 +5,10 @@ import { PostResponse } from "@/lib/types";
 import { postAPI } from "@/lib/api";
 import PostCard from "./PostCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faSpinner,
-  faSearch,
-  faTimes,
-} from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import PostCardSkeleton from "./PostCardSkeleton";
 
 interface PostFeedProps {
   sortBy?: "latest" | "popular" | "views";
@@ -189,7 +186,7 @@ export default function PostFeed({
             )}
             <Button
               onClick={handleSearch}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-linear-to-r from-purple-600 to-pink-600"
             >
               검색
             </Button>
@@ -243,6 +240,15 @@ export default function PostFeed({
         </div>
       )}
 
+      {/* 초기 로딩 시 스켈레톤 그리드 */}
+      {loading && posts.length === 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <PostCardSkeleton key={i} />
+          ))}
+        </div>
+      )}
+
       {/* 그리드 레이아웃 - 2열 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {posts.map((post) => (
@@ -250,13 +256,12 @@ export default function PostFeed({
         ))}
       </div>
 
-      {/* 로딩 인디케이터 */}
-      {loading && (
-        <div className="text-center py-8">
-          <FontAwesomeIcon
-            icon={faSpinner}
-            className="text-3xl text-purple-600 animate-spin"
-          />
+      {/* 추가 로딩 시 하단 스켈레톤 (more 로딩 중) */}
+      {loading && posts.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <PostCardSkeleton key={i} />
+          ))}
         </div>
       )}
 

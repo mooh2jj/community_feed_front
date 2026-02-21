@@ -53,6 +53,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [isLoading, setIsLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false); // 이미지 로딩 완료 여부
 
   useEffect(() => {
     const likedPosts = storage.getLikedPosts();
@@ -122,21 +123,28 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
 
   return (
     <Link href={`/post/${post.id}`}>
-      <Card className="group overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20 hover:-translate-y-2 border-2 border-purple-100 hover:border-purple-300 bg-gradient-to-br from-white to-purple-50/30 flex flex-col">
-        {/* 이미지 - 항상 표시 (실제 이미지 또는 더미 이미지) */}
-        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100">
+      <Card className="group overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20 hover:-translate-y-2 border-2 border-purple-100 hover:border-purple-300 bg-linear-to-br from-white to-purple-50/30 flex flex-col">
+        {/* 이미지 - 로딩 중 스켈레톤 오버레이 포함 */}
+        <div className="relative aspect-square overflow-hidden bg-linear-to-br from-purple-100 to-pink-100">
+          {/* 이미지 로딩 중 스켈레톤 */}
+          {!imageLoaded && (
+            <div className="absolute inset-0 z-10 bg-linear-to-br from-purple-100 to-pink-100 animate-pulse" />
+          )}
           <Image
             src={displayImageUrl}
             alt={post.content}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            className={`object-cover transition-all duration-500 group-hover:scale-110 ${
+              imageLoaded ? "opacity-100" : "opacity-0"
+            }`}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             unoptimized={!!post.imageUrl}
+            onLoad={() => setImageLoaded(true)}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
 
-        <div className="p-4 space-y-3 h-[280px] flex flex-col">
+        <div className="p-4 space-y-3 h-70 flex flex-col">
           {/* 작성자 정보 */}
           <div className="flex items-center gap-3">
             <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-400 ring-offset-2">
@@ -164,7 +172,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
 
           {/* 해시태그 */}
           {post.hashtags && post.hashtags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 min-h-[28px]">
+            <div className="flex flex-wrap gap-1.5 min-h-7">
               {post.hashtags.slice(0, 3).map((tag, index) => (
                 <button
                   key={index}
@@ -189,7 +197,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
               disabled={isLoading}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 ${
                 isLiked
-                  ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/50"
+                  ? "bg-linear-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/50"
                   : "bg-gray-100 text-gray-600 hover:bg-purple-100 hover:text-purple-600"
               }`}
             >

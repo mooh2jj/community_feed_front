@@ -10,13 +10,17 @@ import {
   faFire,
   faEye,
   faStar,
-  faSpinner,
   type IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
+import PostCardSkeleton from "@/components/PostCardSkeleton";
 
 type SortOption = "latest" | "popular" | "views";
 
-const sortOptions: { value: SortOption; label: string; icon: IconDefinition }[] = [
+const sortOptions: {
+  value: SortOption;
+  label: string;
+  icon: IconDefinition;
+}[] = [
   { value: "latest", label: "최신순", icon: faClock },
   { value: "popular", label: "인기순", icon: faFire },
   { value: "views", label: "조회순", icon: faEye },
@@ -102,11 +106,21 @@ export default function Home() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <FontAwesomeIcon
-            icon={faSpinner}
-            className="text-4xl text-purple-600 animate-spin"
-          />
+        <div className="min-h-screen">
+          {/* 헤더 스켈레톤 */}
+          <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-purple-100 shadow-sm h-16" />
+          <div className="max-w-5xl mx-auto px-4 py-6">
+            {/* 배너 스켈레톤 */}
+            <div className="mb-8 h-24 rounded-3xl bg-linear-to-r from-purple-200 to-pink-200 animate-pulse" />
+            {/* 검색창 스켈레톤 */}
+            <div className="mb-6 h-14 rounded-2xl bg-gray-100 animate-pulse" />
+            {/* 컨텐츠 스켈레톤 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <PostCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
         </div>
       }
     >
