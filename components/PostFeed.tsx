@@ -109,7 +109,7 @@ export default function PostFeed({
     if (page === 1 && posts.length === 0) {
       loadMore();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy, searchKeyword]); // sortBy 또는 searchKeyword 변경 시 리로드
 
   // 게시물 로드
@@ -231,7 +231,10 @@ export default function PostFeed({
       <div className="mb-6 space-y-4">
         <div className="flex items-center gap-3">
           {/* 검색창 + 최근 검색어 드롭다운 */}
-          <div ref={searchWrapperRef} className="relative flex-1 max-w-2xl mx-auto">
+          <div
+            ref={searchWrapperRef}
+            className="relative flex-1 max-w-2xl mx-auto"
+          >
             <Input
               type="text"
               placeholder="게시물 검색... (예: 알고리즘, SQL)"
