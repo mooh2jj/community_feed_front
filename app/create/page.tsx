@@ -64,6 +64,15 @@ export default function CreatePost() {
       return;
     }
 
+    // 첫 번째 블록이 H1 제목인지 확인 (Tiptap은 # 제목을 <h1>로 출력)
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(content, "text/html");
+    const firstBlock = doc.body.firstElementChild;
+    if (!firstBlock || firstBlock.tagName.toLowerCase() !== "h1") {
+      toast.error("첫 번째 줄은 반드시 제목 1(# 제목)로 시작해야 합니다");
+      return;
+    }
+
     setIsSubmitting(true);
     const userEmail = storage.getCurrentUserEmail();
 
@@ -195,10 +204,21 @@ export default function CreatePost() {
             >
               📝 스터디 기록
             </Label>
+            {/* H1 제목 필수 안내 */}
+            {/* <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-xs text-indigo-700">
+              <span className="font-bold text-indigo-600">필수</span>
+              <span>
+                첫 번째 줄은{" "}
+                <code className="bg-white border border-indigo-200 rounded px-1 font-mono">
+                  # 제목
+                </code>{" "}
+                (H1) 으로 시작해야 합니다
+              </span>
+            </div> */}
             <TiptapEditor
               content={content}
               onChange={setContent}
-              placeholder="오늘 무엇을 공부했나요?&#10;예: 알고리즘 3문제 풀이 완료! 🔥"
+              placeholder="# 제목을 입력하세요 (필수!)&#10;&#10;오늘 무엇을 인증할까요?"
               pendingFilesRef={pendingFilesRef}
             />
             {/* 마크다운 단축키 힌트 */}
