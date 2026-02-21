@@ -82,9 +82,10 @@ export default function PostDetailPage() {
 
   const userEmail = storage.getCurrentUserEmail();
 
-  // 해시태그 클릭 핸들러
+  // 해시태그 클릭 핸들러 - # 제거 후 검색창에 입력
   const handleHashtagClick = (hashtag: string) => {
-    router.push(`/?search=${encodeURIComponent(hashtag)}`);
+    const keyword = hashtag.startsWith("#") ? hashtag.slice(1) : hashtag;
+    router.push(`/?search=${encodeURIComponent(keyword)}`);
   };
 
   // 해시태그 추출 함수 (공백, 쉼표로 구분)

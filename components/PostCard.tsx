@@ -69,11 +69,13 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
     }
   }, [post.content]);
 
-  // 해시태그 클릭 핸들러
+  // 해시태그 클릭 핸들러 - # 제거 후 검색창에 입력
   const handleHashtagClick = (e: React.MouseEvent, hashtag: string) => {
     e.preventDefault();
     e.stopPropagation();
-    router.push(`/?search=${encodeURIComponent(hashtag)}`);
+    // #으로 시작하면 제거하여 검색어로 전달
+    const keyword = hashtag.startsWith("#") ? hashtag.slice(1) : hashtag;
+    router.push(`/?search=${encodeURIComponent(keyword)}`);
   };
 
   const handleLike = async (e: React.MouseEvent) => {

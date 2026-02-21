@@ -35,11 +35,14 @@ export default function PostFeed({
   const [searchInput, setSearchInput] = useState(initialSearchKeyword);
   const observerTarget = useRef<HTMLDivElement>(null);
 
-  // initialSearchKeyword가 변경되면 검색 업데이트
+  // initialSearchKeyword가 변경되면 검색 업데이트 (# 포함 시 제거)
   useEffect(() => {
     if (initialSearchKeyword) {
-      setSearchKeyword(initialSearchKeyword);
-      setSearchInput(initialSearchKeyword);
+      const clean = initialSearchKeyword.startsWith("#")
+        ? initialSearchKeyword.slice(1)
+        : initialSearchKeyword;
+      setSearchKeyword(clean);
+      setSearchInput(clean);
     }
   }, [initialSearchKeyword]);
 
