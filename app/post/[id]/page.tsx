@@ -246,29 +246,33 @@ export default function PostDetailPage() {
   };
 
   // 댓글 삭제
-  const handleDeleteComment = async (commentId: number) => {
-    if (!confirm("정말로 이 댓글을 삭제하시겠습니까?")) {
-      return;
-    }
-
-    try {
-      await commentAPI.deleteComment(commentId, userEmail);
-
-      // 댓글 목록에서 제거
-      setComments(comments.filter((c) => c.id !== commentId));
-
-      // 게시글의 댓글 수 업데이트
-      if (post) {
-        setPost({ ...post, commentCount: post.commentCount - 1 });
-      }
-
-      toast.success("댓글이 삭제되었습니다");
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "댓글 삭제에 실패했습니다";
-      toast.error(errorMessage);
-      console.error("Delete comment error:", error);
-    }
+  const handleDeleteComment = (commentId: number) => {
+    toast("댓글을 삭제할까요?", {
+      action: {
+        label: "삭제",
+        onClick: async () => {
+          try {
+            await commentAPI.deleteComment(commentId, userEmail);
+            setComments(comments.filter((c) => c.id !== commentId));
+            if (post) {
+              setPost({ ...post, commentCount: post.commentCount - 1 });
+            }
+            toast.success("댓글이 삭제되었습니다");
+          } catch (error) {
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : "댓글 삭제에 실패했습니다";
+            toast.error(errorMessage);
+            console.error("Delete comment error:", error);
+          }
+        },
+      },
+      cancel: {
+        label: "취소",
+        onClick: () => {},
+      },
+    });
   };
 
   // 파일 선택 핸들러
@@ -375,22 +379,31 @@ export default function PostDetailPage() {
   };
 
   // 게시글 삭제
-  const handleDelete = async () => {
-    if (!confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
-      return;
-    }
-
-    try {
-      await postAPI.deletePost(postId, userEmail);
-
-      toast.success("게시글이 삭제되었습니다");
-      router.push("/");
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "게시글 삭제에 실패했습니다";
-      toast.error(errorMessage);
-      console.error("Delete error:", error);
-    }
+  const handleDelete = () => {
+    toast("게시글을 삭제할까요?", {
+      description: "삭제된 게시글은 복구할 수 없습니다.",
+      action: {
+        label: "삭제",
+        onClick: async () => {
+          try {
+            await postAPI.deletePost(postId, userEmail);
+            toast.success("게시글이 삭제되었습니다");
+            router.push("/");
+          } catch (error) {
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : "게시글 삭제에 실패했습니다";
+            toast.error(errorMessage);
+            console.error("Delete error:", error);
+          }
+        },
+      },
+      cancel: {
+        label: "취소",
+        onClick: () => {},
+      },
+    });
   };
 
   if (loading || !post) {
