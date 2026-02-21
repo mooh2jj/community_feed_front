@@ -42,8 +42,9 @@ export default function Home() {
       {/* 헤더 */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-lg border-b border-purple-100 shadow-sm">
         <div className="max-w-screen-lg mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+          {/* 로고 + 정렬 버튼을 한 줄에 */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 shrink-0">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
                 <FontAwesomeIcon icon={faStar} className="text-white text-lg" />
               </div>
@@ -54,20 +55,20 @@ export default function Home() {
             </div>
 
             {/* 정렬 버튼 */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap justify-end">
               {sortOptions.map((option) => (
                 <Button
                   key={option.value}
                   variant={sortBy === option.value ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSortBy(option.value)}
-                  className={`transition-all duration-300 ${
+                  className={`transition-all duration-300 text-xs sm:text-sm ${
                     sortBy === option.value
                       ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30"
                       : "hover:border-purple-300"
                   }`}
                 >
-                  <FontAwesomeIcon icon={option.icon} className="mr-2" />
+                  <FontAwesomeIcon icon={option.icon} className="mr-1.5" />
                   {option.label}
                 </Button>
               ))}
@@ -87,7 +88,11 @@ export default function Home() {
         </div>
 
         {/* 피드 */}
-        <PostFeed initialSearchKeyword={initialSearch} />
+        <PostFeed
+          sortBy={sortBy}
+          onResetSort={() => setSortBy("latest")}
+          initialSearchKeyword={initialSearch}
+        />
       </main>
     </div>
   );

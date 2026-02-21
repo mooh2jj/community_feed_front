@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 interface PostFeedProps {
-  sortBy?: "latest" | "views";
+  sortBy?: "latest" | "popular" | "views";
   onResetSort?: () => void;
   initialSearchKeyword?: string; // 초기 검색어
 }
@@ -67,11 +67,14 @@ export default function PostFeed({
     }
 
     // sortBy를 OrderCondition enum 값으로 변환
-    // latest(최신순) -> CREATED_AT_DESC
-    // views(조회순) -> VIEW_COUNT_DESC
+    // latest(최신순)  -> CREATED_AT_DESC
+    // views(조회순)   -> VIEW_COUNT_DESC
+    // popular(인기순) -> LIKE_COUNT_DESC
     let orderCondition = "CREATED_AT_DESC";
     if (sortBy === "views") {
       orderCondition = "VIEW_COUNT_DESC";
+    } else if (sortBy === "popular") {
+      orderCondition = "LIKE_COUNT_DESC";
     }
 
     console.log("📥 게시물 로드 시작:", {
