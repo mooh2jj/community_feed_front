@@ -119,7 +119,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
   // imageUrl이 있으면 백엔드 API 사용, 없으면 더미 이미지
   // 목록에서는 썸네일 이미지 사용 (빠른 로딩), 더미는 picsum
   const displayImageUrl = post.imageUrl
-    ? fileAPI.getImageUrl(post.imageUrl, "THUMBNAIL")
+    ? fileAPI.getImageUrl(post.imageUrl, "POST")
     : `https://picsum.photos/seed/${post.id}/800/800`;
 
   return (
