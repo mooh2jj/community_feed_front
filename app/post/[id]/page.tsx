@@ -40,6 +40,7 @@ import {
   faSave,
   faTimes,
   faImage,
+  faCamera,
 } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
 import { PostResponse, CommentResponse } from "@/lib/types";
@@ -300,6 +301,15 @@ export default function PostDetailPage() {
       setEditFilePreview(reader.result as string);
     };
     reader.readAsDataURL(file);
+
+    // 같은 파일 재선택 허용 (value 초기화)
+    e.target.value = "";
+  };
+
+  // 수정 모드 이미지 제거 핸들러 (새로 선택한 파일만 취소, 기존 이미지 복원)
+  const handleRemoveEditImage = () => {
+    setEditFile(null);
+    setEditFilePreview(null);
   };
 
   // 수정 모드로 전환
@@ -508,38 +518,69 @@ export default function PostDetailPage() {
                   pendingFilesRef={editPendingFilesRef}
                 />
 
-                {/* 파일 업로드 */}
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full border-2 border-dashed border-purple-300 hover:border-purple-500 hover:bg-purple-50"
-                  >
-                    <FontAwesomeIcon icon={faImage} className="mr-2" />
-                    {editFile
-                      ? `선택된 파일: ${editFile.name}`
-                      : "새 이미지 업로드 (선택사항)"}
-                  </Button>
-
-                  {/* 이미지 미리보기 */}
-                  {editFilePreview && (
-                    <div className="mt-4 relative aspect-video rounded-2xl overflow-hidden border-2 border-purple-200">
-                      <Image
-                        src={editFilePreview}
-                        alt="Preview"
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  )}
+                {/* 이미지 교체 - create 페이지와 동일한 호버 오버레이 방식 */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-gray-700">
+                    📸 인증 사진
+                  </Label>
+                  <div className="relative aspect-video rounded-2xl overflow-hidden border-2 border-dashed border-purple-300 hover:border-purple-500 transition-colors bg-purple-50/50">
+                    {editFilePreview || post.imageUrl ? (
+                      <>
+                        {/* 새 미리보기 또는 기존 이미지 표시 */}
+                        <img
+                          src={
+                            editFilePreview ??
+                            fileAPI.getImageUrl(post.imageUrl!, "POST")
+                          }
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        {/* 호버 오버레이 — 평소 숨김, 호버 시 등장 */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-gray-800 font-semibold text-sm rounded-xl transition-colors"
+                          >
+                            <FontAwesomeIcon icon={faCamera} />
+                            사진 교체
+                          </button>
+                          {/* 새 파일이 선택된 경우에만 '취소(원본 복원)' 버튼 표시 */}
+                          {editFilePreview && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveEditImage}
+                              className="flex items-center gap-2 px-4 py-2 bg-red-500/90 hover:bg-red-500 text-white font-semibold text-sm rounded-xl transition-colors"
+                            >
+                              <FontAwesomeIcon icon={faTrash} />
+                              취소
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      /* 이미지가 없을 때 업로드 플레이스홀더 */
+                      <label
+                        className="w-full h-full flex flex-col items-center justify-center cursor-pointer"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <FontAwesomeIcon
+                          icon={faImage}
+                          className="text-4xl text-purple-300 mb-3"
+                        />
+                        <p className="text-purple-600 font-semibold text-sm">
+                          사진 선택하기
+                        </p>
+                      </label>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </div>
                 </div>
 
                 {/* 해시태그 입력 */}
