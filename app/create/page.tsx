@@ -7,7 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import TiptapEditor from "@/components/TiptapEditor";
-import { faImage, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import {
+  faImage,
+  faArrowLeft,
+  faCamera,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
 import { postAPI, storage, fileAPI } from "@/lib/api";
 import { uploadInlineImages } from "@/lib/imageUploadUtils";
 import { toast } from "sonner";
@@ -26,6 +31,8 @@ export default function CreatePost() {
 
   // 에디터 내 미업로드 이미지 파일 보관 (data URL → File)
   const pendingFilesRef = useRef<Map<string, File>>(new Map());
+  // 인증 사진 파일 input ref (교체 시 click() 호출용)
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // 해시태그 추출 함수 (공백, 쉼표로 구분)
   const extractHashtags = (input: string): string[] => {
@@ -44,16 +51,21 @@ export default function CreatePost() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // 파일 저장
       setSelectedFile(file);
-
-      // 미리보기 생성
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
+    // 같은 파일 재선택 허용 (value 초기화)
+    e.target.value = "";
+  };
+
+  // 선택한 인증 사진 제거
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    setSelectedFile(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -166,11 +178,33 @@ export default function CreatePost() {
             </Label>
             <div className="relative aspect-video rounded-3xl overflow-hidden border-4 border-dashed border-purple-300 hover:border-purple-500 transition-colors bg-purple-50/50">
               {imagePreview ? (
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
+                <>
+                  {/* 미리보기 이미지 */}
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  {/* 호버 오버레이 — 평소에는 숨겨지고 호버 시에만 등장 */}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => imageInputRef.current?.click()}
+                      className="flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-gray-800 font-semibold text-sm rounded-xl transition-colors"
+                    >
+                      <FontAwesomeIcon icon={faCamera} />
+                      사진 교체
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-500/90 hover:bg-red-500 text-white font-semibold text-sm rounded-xl transition-colors"
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                      제거
+                    </button>
+                  </div>
+                </>
               ) : (
                 <label
                   htmlFor="image"
@@ -187,6 +221,7 @@ export default function CreatePost() {
                 </label>
               )}
               <Input
+                ref={imageInputRef}
                 id="image"
                 type="file"
                 accept="image/*"
