@@ -79,6 +79,8 @@ export default function PostDetailPage() {
   const [editFilePreview, setEditFilePreview] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [editHashtagInput, setEditHashtagInput] = useState(""); // 해시태그 수정
+  // 에디터 강제 리마운트를 위한 key (수정 모드 진입 시마다 변경)
+  const [editorKey, setEditorKey] = useState(0);
 
   // 댓글 수정 모드 상태
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
@@ -315,16 +317,18 @@ export default function PostDetailPage() {
   // 수정 모드로 전환
   const handleEditClick = () => {
     if (!post) return;
-    setIsEditing(true);
+    // content를 먼저 설정한 뒤 key 변경으로 에디터를 강제 리마운트
     setEditContent(post.content);
     setEditFile(null);
     setEditFilePreview(null);
-    // 해시태그가 있으면 로드 (# 제거하고 표시)
+    // 해시태그가 있으면 로드
     if (post.hashtags && post.hashtags.length > 0) {
       setEditHashtagInput(post.hashtags.join(", "));
     } else {
       setEditHashtagInput("");
     }
+    setEditorKey((prev) => prev + 1);
+    setIsEditing(true);
   };
 
   // 수정 취소
@@ -512,6 +516,7 @@ export default function PostDetailPage() {
             {isEditing ? (
               <div className="space-y-4 p-4 bg-purple-50 rounded-2xl">
                 <TiptapEditor
+                  key={editorKey}
                   content={editContent}
                   onChange={setEditContent}
                   placeholder="무슨 생각을 하고 계신가요?"
