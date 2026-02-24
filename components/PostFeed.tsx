@@ -4,11 +4,20 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { PostResponse } from "@/lib/types";
 import { postAPI } from "@/lib/api";
 import PostCard from "./PostCard";
+import PostListItem from "./PostListItem";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faTimes, faClock } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSearch,
+  faTimes,
+  faClock,
+  faChevronLeft,
+  faChevronRight,
+} from "@fortawesome/free-solid-svg-icons";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import PostCardSkeleton from "./PostCardSkeleton";
+import PostListItemSkeleton from "./PostListItemSkeleton";
+import type { ViewMode } from "@/app/page";
 
 // ─── 최근 검색어 localStorage 유틸리티 ─────────────────────────────────────
 const RECENT_SEARCHES_KEY = "recentSearches";
@@ -45,35 +54,59 @@ const recentSearchStorage = {
 
 interface PostFeedProps {
   sortBy?: "latest" | "popular" | "views";
+  viewMode?: ViewMode;
   onResetSort?: () => void;
-  initialSearchKeyword?: string; // 초기 검색어
+  initialSearchKeyword?: string;
 }
 
+/** 리스트 뷰 클라이언트 페이지네이션 시 한 페이지에 표시할 게시글 수 */
+const LIST_PAGE_SIZE = 10;
+/** 리스트 뷰에서 서버로부터 가져올 최대 게시글 수 (전체 로드) */
+const LIST_FETCH_SIZE = 500;
+/** 그리드 뷰 페이지 당 게시글 수 */
+const GRID_PAGE_SIZE = 20;
+
 /**
- * 무한 스크롤 피드 컴포넌트
+ * 그리드(무한 스크롤) / 리스트(페이지네이션) 뷰 모드 지원 피드 컴포넌트
  */
 export default function PostFeed({
   sortBy = "latest",
+  viewMode = "grid",
   onResetSort,
   initialSearchKeyword = "",
 }: PostFeedProps) {
   const [posts, setPosts] = useState<PostResponse[]>([]);
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState(initialSearchKeyword);
   const [searchInput, setSearchInput] = useState(initialSearchKeyword);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const observerTarget = useRef<HTMLDivElement>(null);
   const searchWrapperRef = useRef<HTMLDivElement>(null);
 
-  // 마운트 시 최근 검색어 로드
+  // ─── 그리드 모드 (무한 스크롤) 전용 상태 ──────────────────────────────────
+  const [gridPage, setGridPage] = useState(1);
+  const [gridHasMore, setGridHasMore] = useState(true);
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  // ─── 리스트 모드 (클라이언트 페이지네이션) 전용 상태 ─────────────────────
+  const [allListPosts, setAllListPosts] = useState<PostResponse[]>([]); // 전체 게시글
+  const [listPage, setListPage] = useState(1);
+
+  // ─── sortBy → OrderCondition 변환 헬퍼 ────────────────────────────────────
+  const getOrderCondition = useCallback((sort: string) => {
+    const orderMap: Record<string, string> = {
+      latest: "CREATED_AT_DESC",
+      views: "VIEW_COUNT_DESC",
+      popular: "LIKE_COUNT_DESC",
+    };
+    return orderMap[sort] ?? "CREATED_AT_DESC";
+  }, []);
+
+  // ─── 공통 초기화 이벤트 ────────────────────────────────────────────────────
   useEffect(() => {
     setRecentSearches(recentSearchStorage.get());
   }, []);
 
-  // 검색창 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (!searchWrapperRef.current?.contains(e.target as Node)) {
@@ -84,7 +117,6 @@ export default function PostFeed({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // initialSearchKeyword가 변경되면 검색 업데이트 (# 포함 시 제거)
   useEffect(() => {
     if (initialSearchKeyword) {
       const clean = initialSearchKeyword.startsWith("#")
@@ -95,102 +127,121 @@ export default function PostFeed({
     }
   }, [initialSearchKeyword]);
 
-  // sortBy 또는 searchKeyword 변경시 초기화
+  // sortBy · searchKeyword · viewMode 변경 시 피드 초기화
   useEffect(() => {
-    console.log("🔄 피드 초기화:", { sortBy, searchKeyword });
     setPosts([]);
-    setPage(1);
-    setHasMore(true);
-  }, [sortBy, searchKeyword]);
+    setGridPage(1);
+    setGridHasMore(true);
+    setAllListPosts([]);
+    setListPage(1);
+  }, [sortBy, searchKeyword, viewMode]);
 
-  // 컴포넌트 마운트 시 또는 sortBy/searchKeyword 변경 시 첫 로딩
-  useEffect(() => {
-    console.log("🚀 PostFeed 로딩 시작:", { sortBy, searchKeyword });
-    if (page === 1 && posts.length === 0) {
-      loadMore();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortBy, searchKeyword]); // sortBy 또는 searchKeyword 변경 시 리로드
-
-  // 게시물 로드
-  const loadMore = useCallback(async () => {
-    if (loading || !hasMore) {
-      console.log("⏸️ 로딩 건너뜀:", { loading, hasMore });
-      return;
-    }
-
-    // sortBy를 OrderCondition enum 값으로 변환
-    // latest(최신순)  -> CREATED_AT_DESC
-    // views(조회순)   -> VIEW_COUNT_DESC
-    // popular(인기순) -> LIKE_COUNT_DESC
-    let orderCondition = "CREATED_AT_DESC";
-    if (sortBy === "views") {
-      orderCondition = "VIEW_COUNT_DESC";
-    } else if (sortBy === "popular") {
-      orderCondition = "LIKE_COUNT_DESC";
-    }
-
-    console.log("📥 게시물 로드 시작:", {
-      page,
-      size: 20,
-      sortBy,
-      orderCondition,
-      searchKeyword,
-    });
+  // ─── 그리드 모드: 무한 스크롤 로딩 ────────────────────────────────────────
+  const loadMoreGrid = useCallback(async () => {
+    if (loading || !gridHasMore || viewMode !== "grid") return;
     setLoading(true);
     try {
       const result = await postAPI.getPosts(
-        page,
-        20,
-        orderCondition,
+        gridPage,
+        GRID_PAGE_SIZE,
+        getOrderCondition(sortBy),
         searchKeyword || undefined,
       );
-      console.log("📦 서버 응답:", {
-        contentLength: result.data.content.length,
-        isLast: result.data.last,
-        page,
-      });
       const newPosts = result.data.content;
-
-      if (page === 1) {
-        setPosts(newPosts);
-      } else {
-        setPosts((prev) => [...prev, ...newPosts]);
-      }
-
-      setHasMore(!result.data.last);
-      setPage((prev) => prev + 1);
+      setPosts((prev) => (gridPage === 1 ? newPosts : [...prev, ...newPosts]));
+      setGridHasMore(!result.data.last);
+      setGridPage((prev) => prev + 1);
     } catch (error) {
       console.error("Failed to load posts:", error);
     } finally {
       setLoading(false);
     }
-  }, [page, loading, hasMore, sortBy, searchKeyword]);
+  }, [
+    gridPage,
+    loading,
+    gridHasMore,
+    sortBy,
+    searchKeyword,
+    viewMode,
+    getOrderCondition,
+  ]);
 
-  // Intersection Observer 설정
+  // 그리드 모드 초기 로딩 트리거
   useEffect(() => {
+    if (viewMode === "grid" && gridPage === 1 && posts.length === 0) {
+      loadMoreGrid();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy, searchKeyword, viewMode]);
+
+  // Intersection Observer (그리드 모드 전용)
+  useEffect(() => {
+    if (viewMode !== "grid") return;
+
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
-          loadMore();
+        if (entries[0].isIntersecting && gridHasMore && !loading) {
+          loadMoreGrid();
         }
       },
       { threshold: 0.1 },
     );
 
     const currentTarget = observerTarget.current;
-    if (currentTarget) {
-      observer.observe(currentTarget);
-    }
-
+    if (currentTarget) observer.observe(currentTarget);
     return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
-      }
+      if (currentTarget) observer.unobserve(currentTarget);
     };
-  }, [loadMore, hasMore, loading]);
+  }, [loadMoreGrid, gridHasMore, loading, viewMode]);
 
-  // 검색 실행 - 키워드 저장 후 검색
+  // ─── 리스트 모드: 전체 게시글 한 번에 로드 후 클라이언트 페이지네이션 ────
+  const loadAllListPosts = useCallback(async () => {
+    if (loading || viewMode !== "list") return;
+    setLoading(true);
+    try {
+      const result = await postAPI.getPosts(
+        1,
+        LIST_FETCH_SIZE,
+        getOrderCondition(sortBy),
+        searchKeyword || undefined,
+      );
+      setAllListPosts(result.data.content);
+      setListPage(1);
+    } catch (error) {
+      console.error("Failed to load posts:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, viewMode, sortBy, searchKeyword, getOrderCondition]);
+
+  // 리스트 모드 초기 로딩 트리거
+  useEffect(() => {
+    if (viewMode === "list" && allListPosts.length === 0) {
+      loadAllListPosts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy, searchKeyword, viewMode]);
+
+  // 클라이언트 페이지네이션: 현재 페이지에 표시할 게시글 슬라이스
+  const listTotalPages = Math.max(
+    1,
+    Math.ceil(allListPosts.length / LIST_PAGE_SIZE),
+  );
+  const paginatedPosts = allListPosts.slice(
+    (listPage - 1) * LIST_PAGE_SIZE,
+    listPage * LIST_PAGE_SIZE,
+  );
+  const isFirstPage = listPage <= 1;
+  const isLastPage = listPage >= listTotalPages;
+
+  // 페이지 이동 핸들러
+  const goToListPage = (targetPage: number) => {
+    const clamped = Math.max(1, Math.min(targetPage, listTotalPages));
+    setListPage(clamped);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // ─── 검색 핸들러 ──────────────────────────────────────────────────────────
   const handleSearch = (keyword?: string) => {
     const target = (keyword ?? searchInput).trim();
     if (!target) return;
@@ -200,37 +251,33 @@ export default function PostFeed({
     setRecentSearches(recentSearchStorage.add(target));
   };
 
-  // 검색 초기화
   const handleClearSearch = () => {
     setSearchInput("");
     setSearchKeyword("");
     setShowDropdown(false);
   };
 
-  // 최근 검색어 개별 삭제
   const handleRemoveRecent = (e: React.MouseEvent, keyword: string) => {
     e.stopPropagation();
     setRecentSearches(recentSearchStorage.remove(keyword));
   };
 
-  // 최근 검색어 전체 삭제
   const handleClearAllRecent = () => {
     recentSearchStorage.clear();
     setRecentSearches([]);
   };
 
-  // 키보드 처리 (Enter: 검색, Escape: 드롭다운 닫기)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSearch();
     if (e.key === "Escape") setShowDropdown(false);
   };
 
+  // ─── 렌더링 ───────────────────────────────────────────────────────────────
   return (
     <div>
-      {/* 검색창 및 초기화 - 항상 표시 */}
+      {/* 검색창 및 초기화 */}
       <div className="mb-6 space-y-4">
         <div className="flex items-center gap-3">
-          {/* 검색창 + 최근 검색어 드롭다운 */}
           <div
             ref={searchWrapperRef}
             className="relative flex-1 max-w-2xl mx-auto"
@@ -268,7 +315,6 @@ export default function PostFeed({
             {/* 최근 검색어 드롭다운 */}
             {showDropdown && recentSearches.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-purple-100 rounded-2xl shadow-xl z-50 overflow-hidden">
-                {/* 헤더 */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-purple-50">
                   <span className="text-sm font-semibold text-gray-500">
                     최근 검색어
@@ -280,8 +326,6 @@ export default function PostFeed({
                     전체 삭제
                   </button>
                 </div>
-
-                {/* 검색어 목록 */}
                 <ul>
                   {recentSearches.map((keyword) => (
                     <li
@@ -296,7 +340,6 @@ export default function PostFeed({
                       <span className="flex-1 text-sm text-gray-700 truncate">
                         {keyword}
                       </span>
-                      {/* 호버 시 표시되는 개별 삭제 버튼 */}
                       <button
                         onClick={(e) => handleRemoveRecent(e, keyword)}
                         className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-gray-500 transition-opacity p-1"
@@ -311,7 +354,6 @@ export default function PostFeed({
             )}
           </div>
 
-          {/* 정렬 및 검색 초기화 버튼 - 검색창 오른쪽 */}
           {(sortBy !== "latest" || searchKeyword) && onResetSort && (
             <Button
               variant="outline"
@@ -343,55 +385,174 @@ export default function PostFeed({
         )}
       </div>
 
-      {/* 결과 없을 때 메시지 */}
-      {posts.length === 0 && !loading && (
-        <div className="text-center py-20">
-          <p className="text-lg text-gray-500">
-            {searchKeyword
-              ? `"${searchKeyword}"에 대한 검색 결과가 없습니다`
-              : "아직 게시물이 없습니다"}
-          </p>
-          <p className="text-sm text-gray-400 mt-2">
-            {searchKeyword
-              ? "다른 키워드로 검색해보세요"
-              : "첫 번째 스터디를 인증해보세요!"}
-          </p>
-        </div>
+      {/* 결과 없을 때 (그리드: posts, 리스트: allListPosts 기준) */}
+      {(viewMode === "grid" ? posts.length === 0 : allListPosts.length === 0) &&
+        !loading && (
+          <div className="text-center py-20">
+            <p className="text-lg text-gray-500">
+              {searchKeyword
+                ? `"${searchKeyword}"에 대한 검색 결과가 없습니다`
+                : "아직 게시물이 없습니다"}
+            </p>
+            <p className="text-sm text-gray-400 mt-2">
+              {searchKeyword
+                ? "다른 키워드로 검색해보세요"
+                : "첫 번째 스터디를 인증해보세요!"}
+            </p>
+          </div>
+        )}
+
+      {/* ───────── 그리드 뷰 (무한 스크롤) ───────── */}
+      {viewMode === "grid" && (
+        <>
+          {/* 초기 로딩 스켈레톤 */}
+          {loading && posts.length === 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <PostCardSkeleton key={i} />
+              ))}
+            </div>
+          )}
+
+          {/* 2열 그리드 카드 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+
+          {/* 추가 로딩 스켈레톤 */}
+          {loading && posts.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <PostCardSkeleton key={i} />
+              ))}
+            </div>
+          )}
+
+          {/* 무한 스크롤 트리거 */}
+          <div ref={observerTarget} className="h-10" />
+
+          {!gridHasMore && posts.length > 0 && (
+            <div className="text-center py-8 text-gray-400">
+              <p>모든 게시물을 확인했습니다 🎉</p>
+            </div>
+          )}
+        </>
       )}
 
-      {/* 초기 로딩 시 스켈레톤 그리드 */}
-      {loading && posts.length === 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <PostCardSkeleton key={i} />
-          ))}
-        </div>
-      )}
+      {/* ───────── 리스트 뷰 (클라이언트 페이지네이션) ───────── */}
+      {viewMode === "list" && (
+        <>
+          {/* 초기 로딩 스켈레톤 */}
+          {loading && allListPosts.length === 0 && (
+            <div className="space-y-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <PostListItemSkeleton key={i} />
+              ))}
+            </div>
+          )}
 
-      {/* 그리드 레이아웃 - 2열 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
-        ))}
-      </div>
+          {/* 게시글 수 표시 */}
+          {allListPosts.length > 0 && (
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-gray-500">
+                전체{" "}
+                <strong className="text-purple-600">
+                  {allListPosts.length}
+                </strong>
+                개의 게시물
+              </p>
+              {listTotalPages > 1 && (
+                <p className="text-sm text-gray-400">
+                  {listPage} / {listTotalPages} 페이지
+                </p>
+              )}
+            </div>
+          )}
 
-      {/* 추가 로딩 시 하단 스켈레톤 (more 로딩 중) */}
-      {loading && posts.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <PostCardSkeleton key={i} />
-          ))}
-        </div>
-      )}
+          {/* 1열 리스트 */}
+          <div className="space-y-4">
+            {paginatedPosts.map((post) => (
+              <PostListItem key={post.id} post={post} />
+            ))}
+          </div>
 
-      {/* 무한 스크롤 트리거 */}
-      <div ref={observerTarget} className="h-10" />
+          {/* 로딩 중 오버레이 */}
+          {loading && allListPosts.length > 0 && (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin w-8 h-8 border-3 border-purple-600 border-t-transparent rounded-full" />
+            </div>
+          )}
 
-      {/* 더 이상 없을 때 */}
-      {!hasMore && posts.length > 0 && (
-        <div className="text-center py-8 text-gray-400">
-          <p>모든 게시물을 확인했습니다 🎉</p>
-        </div>
+          {/* 페이지네이션 컨트롤 (2페이지 이상일 때만 표시) */}
+          {allListPosts.length > 0 && listTotalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 pt-8 pb-4">
+              {/* 이전 페이지 */}
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isFirstPage}
+                onClick={() => goToListPage(listPage - 1)}
+                className="border-purple-200 hover:border-purple-400 hover:bg-purple-50 disabled:opacity-40"
+              >
+                <FontAwesomeIcon icon={faChevronLeft} className="mr-1.5" />
+                이전
+              </Button>
+
+              {/* 페이지 번호 버튼 */}
+              {Array.from({ length: listTotalPages }, (_, i) => i + 1)
+                .filter((p) => {
+                  // 현재 페이지 기준 앞뒤 2페이지 + 첫/끝 페이지만 표시
+                  return (
+                    p === 1 ||
+                    p === listTotalPages ||
+                    Math.abs(p - listPage) <= 2
+                  );
+                })
+                .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                  // 페이지 사이 간격이 있으면 ... 삽입
+                  if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((item, idx) =>
+                  item === "..." ? (
+                    <span
+                      key={`ellipsis-${idx}`}
+                      className="px-1 text-gray-400 text-sm"
+                    >
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={item}
+                      onClick={() => goToListPage(item)}
+                      className={`inline-flex items-center justify-center min-w-9 h-9 px-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                        item === listPage
+                          ? "bg-purple-600 text-white shadow-md shadow-purple-500/30"
+                          : "text-gray-600 hover:bg-purple-100 hover:text-purple-700"
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ),
+                )}
+
+              {/* 다음 페이지 */}
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isLastPage}
+                onClick={() => goToListPage(listPage + 1)}
+                className="border-purple-200 hover:border-purple-400 hover:bg-purple-50 disabled:opacity-40"
+              >
+                다음
+                <FontAwesomeIcon icon={faChevronRight} className="ml-1.5" />
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -10,11 +10,14 @@ import {
   faFire,
   faEye,
   faStar,
+  faGrip,
+  faList,
   type IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import PostCardSkeleton from "@/components/PostCardSkeleton";
 
 type SortOption = "latest" | "popular" | "views";
+export type ViewMode = "grid" | "list";
 
 const sortOptions: {
   value: SortOption;
@@ -33,6 +36,7 @@ const sortOptions: {
 function HomeContent() {
   const searchParams = useSearchParams();
   const [sortBy, setSortBy] = useState<SortOption>("latest");
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
   // URL 파라미터에서 검색어 직접 읽기
   const initialSearch = searchParams.get("search") ?? "";
@@ -54,8 +58,33 @@ function HomeContent() {
               </div>
             </div>
 
-            {/* 정렬 버튼 */}
+            {/* 뷰 모드 토글 + 정렬 버튼 */}
             <div className="flex items-center gap-1.5 flex-wrap justify-end">
+              {/* 뷰 모드 토글 */}
+              <div className="flex items-center border-2 border-purple-200 rounded-lg overflow-hidden mr-1">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-1.5 transition-colors ${
+                    viewMode === "grid"
+                      ? "bg-purple-600 text-white"
+                      : "text-gray-400 hover:text-purple-600 hover:bg-purple-50"
+                  }`}
+                  title="그리드 뷰"
+                >
+                  <FontAwesomeIcon icon={faGrip} className="text-sm" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-1.5 transition-colors ${
+                    viewMode === "list"
+                      ? "bg-purple-600 text-white"
+                      : "text-gray-400 hover:text-purple-600 hover:bg-purple-50"
+                  }`}
+                  title="리스트 뷰"
+                >
+                  <FontAwesomeIcon icon={faList} className="text-sm" />
+                </button>
+              </div>
               {sortOptions.map((option) => (
                 <Button
                   key={option.value}
@@ -90,6 +119,7 @@ function HomeContent() {
         {/* 피드 */}
         <PostFeed
           sortBy={sortBy}
+          viewMode={viewMode}
           onResetSort={() => setSortBy("latest")}
           initialSearchKeyword={initialSearch}
         />
