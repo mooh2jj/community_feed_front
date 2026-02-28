@@ -194,31 +194,38 @@ export default function PostFeed({
     };
   }, [loadMoreGrid, gridHasMore, loading, viewMode]);
 
-  // ─── 리스트 모드: 전체 게시글 한 번에 로드 후 클라이언트 페이지네이션 ────
-  const loadAllListPosts = useCallback(async () => {
-    if (loading || viewMode !== "list") return;
-    setLoading(true);
-    try {
-      const result = await postAPI.getPosts(
-        1,
-        LIST_FETCH_SIZE,
-        getOrderCondition(sortBy),
-        searchKeyword || undefined,
-      );
-      setAllListPosts(result.data.content);
-      setListPage(1);
-    } catch (error) {
-      console.error("Failed to load posts:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [loading, viewMode, sortBy, searchKeyword, getOrderCondition]);
-
-  // 리스트 모드 초기 로딩 트리거
+  // ─── 리스트 모드: sortBy / searchKeyword / viewMode 변경 시 전체 새로 로드 ─
   useEffect(() => {
-    if (viewMode === "list" && allListPosts.length === 0) {
-      loadAllListPosts();
-    }
+    if (viewMode !== "list") return;
+
+    let cancelled = false;
+
+    const fetchListPosts = async () => {
+      setLoading(true);
+      try {
+        const result = await postAPI.getPosts(
+          1,
+          LIST_FETCH_SIZE,
+          getOrderCondition(sortBy),
+          searchKeyword || undefined,
+        );
+        if (!cancelled) {
+          setAllListPosts(result.data.content);
+          setListPage(1);
+        }
+      } catch (error) {
+        console.error("Failed to load posts:", error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchListPosts();
+
+    // 의존성 변경 시 이전 요청 무시 (race condition 방지)
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortBy, searchKeyword, viewMode]);
 
