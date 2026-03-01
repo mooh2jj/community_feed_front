@@ -52,15 +52,17 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const contentRef = useRef<HTMLDivElement>(null);
-  const [isLiked, setIsLiked] = useState(false);
+  // 서버 응답의 liked 필드를 우선 사용
+  const [isLiked, setIsLiked] = useState(post.liked ?? false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [isLoading, setIsLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false); // 이미지 로딩 완료 여부
 
+  // post 데이터 변경 시(리페치 등) 서버 값으로 동기화
   useEffect(() => {
-    const likedPosts = storage.getLikedPosts();
-    setIsLiked(likedPosts.has(post.id));
-  }, [post.id]);
+    setIsLiked(post.liked ?? false);
+    setLikeCount(post.likeCount);
+  }, [post.id, post.liked, post.likeCount]);
 
   // Syntax highlighting 적용
   useEffect(() => {
@@ -112,8 +114,24 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "오류가 발생했습니다";
-      toast.error(errorMessage);
-      console.error("Like error:", error);
+
+      // 서버 상태와 클라이언트 상태가 불일치한 경우 (상세 페이지에서 좋아요 후 목록 복귀 등)
+      // → UI를 서버 실제 상태로 보정 후 반대 동작 실행
+      if (errorMessage.includes("이미 좋아요")) {
+        try {
+          await postAPI.unlikePost(post.id);
+          setIsLiked(false);
+          setLikeCount((prev) => prev - 1);
+          storage.setLikedPost(post.id, false);
+          toast.success("좋아요를 취소했습니다");
+          onLikeChange?.();
+        } catch {
+          toast.error("오류가 발생했습니다");
+        }
+      } else {
+        toast.error(errorMessage);
+        console.error("Like error:", error);
+      }
     } finally {
       setIsLoading(false);
     }

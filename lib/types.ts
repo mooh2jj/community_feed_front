@@ -26,6 +26,7 @@ export interface PostResponse {
   authorProfileImageUrl?: string;
   visibility: PostVisibility;
   likeCount: number;
+  liked: boolean; // 현재 로그인 사용자의 좋아요 여부 (서버 응답)
   commentCount: number;
   viewCount: number;
   hashtags?: string[]; // 해시태그 목록

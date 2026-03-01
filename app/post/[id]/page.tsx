@@ -111,10 +111,6 @@ export default function PostDetailPage() {
   useEffect(() => {
     loadPost();
     loadComments();
-
-    // 좋아요 상태 확인
-    const likedPosts = storage.getLikedPosts();
-    setIsLiked(likedPosts.has(postId));
   }, [postId]);
 
   // Syntax highlighting 적용
@@ -132,6 +128,9 @@ export default function PostDetailPage() {
       const result = await postAPI.getPost(postId, user?.email);
       setPost(result.data);
       setEditContent(result.data.content);
+
+      // 서버 응답의 liked 필드로 좋아요 상태 초기화
+      setIsLiked(result.data.liked ?? false);
 
       // 내가 작성한 게시글인지 확인 (작성자 이메일과 현재 사용자 이메일 비교)
       setIsMyPost(!!user && result.data.authorEmail === user.email);
@@ -178,11 +177,25 @@ export default function PostDetailPage() {
         toast.success("❤️ 좋아요!");
       }
     } catch (error) {
-      // API 에러 응답의 message를 표시
       const errorMessage =
         error instanceof Error ? error.message : "오류가 발생했습니다";
-      toast.error(errorMessage);
-      console.error("Like error:", error);
+
+      // 서버 상태와 클라이언트 상태가 불일치한 경우
+      // → UI를 서버 실제 상태로 보정 후 반대 동작 실행
+      if (errorMessage.includes("이미 좋아요")) {
+        try {
+          await postAPI.unlikePost(postId);
+          setPost({ ...post, likeCount: post.likeCount - 1 });
+          setIsLiked(false);
+          storage.setLikedPost(postId, false);
+          toast.success("좋아요를 취소했습니다");
+        } catch {
+          toast.error("오류가 발생했습니다");
+        }
+      } else {
+        toast.error(errorMessage);
+        console.error("Like error:", error);
+      }
     }
   };
 
