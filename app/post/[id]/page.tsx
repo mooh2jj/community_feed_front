@@ -45,6 +45,7 @@ import {
 import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
 import { PostResponse, CommentResponse } from "@/lib/types";
 import { postAPI, commentAPI, storage, fileAPI } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
@@ -58,6 +59,7 @@ import { uploadInlineImages } from "@/lib/imageUploadUtils";
 export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
   const postId = Number(params.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -85,8 +87,6 @@ export default function PostDetailPage() {
   // 댓글 수정 모드 상태
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editCommentContent, setEditCommentContent] = useState("");
-
-  const userEmail = storage.getCurrentUserEmail();
 
   // 해시태그 클릭 핸들러 - # 제거 후 검색창에 입력
   const handleHashtagClick = (hashtag: string) => {
@@ -129,12 +129,12 @@ export default function PostDetailPage() {
 
   const loadPost = async () => {
     try {
-      const result = await postAPI.getPost(postId, userEmail);
+      const result = await postAPI.getPost(postId, user?.email);
       setPost(result.data);
       setEditContent(result.data.content);
 
-      // 내가 작성한 게시글인지 확인 (자성자 이메일과 현재 사용자 이메일 비교)
-      setIsMyPost(result.data.authorEmail === userEmail);
+      // 내가 작성한 게시글인지 확인 (작성자 이메일과 현재 사용자 이메일 비교)
+      setIsMyPost(!!user && result.data.authorEmail === user.email);
     } catch (error) {
       console.error("Failed to load post:", error);
       toast.error("게시물을 불러올 수 없습니다");
@@ -146,7 +146,7 @@ export default function PostDetailPage() {
 
   const loadComments = async () => {
     try {
-      const result = await commentAPI.getComments(postId, userEmail);
+      const result = await commentAPI.getComments(postId, user?.email);
       setComments(result.data.content);
     } catch (error) {
       console.error("Failed to load comments:", error);
@@ -157,14 +157,21 @@ export default function PostDetailPage() {
     if (!post) return;
 
     try {
+      // 비로그인 사용자는 좋아요 불가
+      if (!isAuthenticated) {
+        toast.error("로그인이 필요합니다");
+        router.push("/login");
+        return;
+      }
+
       if (isLiked) {
-        await postAPI.unlikePost(postId, userEmail);
+        await postAPI.unlikePost(postId);
         setPost({ ...post, likeCount: post.likeCount - 1 });
         setIsLiked(false);
         storage.setLikedPost(postId, false);
         toast.success("좋아요를 취소했습니다");
       } else {
-        await postAPI.likePost(postId, userEmail);
+        await postAPI.likePost(postId);
         setPost({ ...post, likeCount: post.likeCount + 1 });
         setIsLiked(true);
         storage.setLikedPost(postId, true);
@@ -189,7 +196,7 @@ export default function PostDetailPage() {
 
     setIsSubmitting(true);
     try {
-      const result = await commentAPI.createComment(postId, userEmail, {
+      const result = await commentAPI.createComment(postId, {
         content: newComment.trim(),
       });
 
@@ -231,7 +238,7 @@ export default function PostDetailPage() {
     }
 
     try {
-      const result = await commentAPI.updateComment(commentId, userEmail, {
+      const result = await commentAPI.updateComment(commentId, {
         content: editCommentContent.trim(),
       });
 
@@ -255,7 +262,7 @@ export default function PostDetailPage() {
         label: "삭제",
         onClick: async () => {
           try {
-            await commentAPI.deleteComment(commentId, userEmail);
+            await commentAPI.deleteComment(commentId);
             setComments(comments.filter((c) => c.id !== commentId));
             if (post) {
               setPost({ ...post, commentCount: post.commentCount - 1 });
@@ -370,7 +377,7 @@ export default function PostDetailPage() {
       // 게시글 수정
       const hashtags = extractHashtags(editHashtagInput);
 
-      const result = await postAPI.updatePost(postId, userEmail, {
+      const result = await postAPI.updatePost(postId, {
         content: finalContent.trim(),
         uploadedFileId: fileId,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
@@ -400,7 +407,7 @@ export default function PostDetailPage() {
         label: "삭제",
         onClick: async () => {
           try {
-            await postAPI.deletePost(postId, userEmail);
+            await postAPI.deletePost(postId);
             toast.success("게시글이 삭제되었습니다");
             router.push("/");
           } catch (error) {
@@ -724,7 +731,8 @@ export default function PostDetailPage() {
                 </div>
               ) : (
                 comments.map((comment) => {
-                  const isMyComment = comment.authorEmail === userEmail;
+                  const isMyComment =
+                    !!user && comment.authorEmail === user.email;
                   const isEditingThisComment = editingCommentId === comment.id;
 
                   return (

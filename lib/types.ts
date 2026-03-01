@@ -118,3 +118,35 @@ export type SortOption = "latest" | "popular" | "views";
 export interface LikedPosts {
   [postId: string]: boolean;
 }
+
+// ─── 인증 관련 타입 ─────────────────────────────────────────────────────────
+
+/** 로그인 요청 */
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+/** 회원가입 요청 */
+export interface JoinRequest {
+  email: string;
+  password: string;
+  name: string;
+}
+
+/** 토큰 응답 (로그인 / 토큰 갱신) */
+export interface TokenResponse {
+  accessToken: string;
+  tokenType: string;
+  expiresIn: number; // 초 단위
+}
+
+/** 인증 컨텍스트 타입 */
+export interface AuthContextType {
+  user: UserResponse | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, name: string) => Promise<void>;
+  logout: () => Promise<void>;
+}

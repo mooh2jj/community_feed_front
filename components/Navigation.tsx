@@ -1,28 +1,51 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHome,
   faPlus,
   faTrophy,
   faUser,
+  faSignInAlt,
 } from "@fortawesome/free-solid-svg-icons";
+import { useAuth } from "@/context/AuthContext";
 
 /**
  * 하단 네비게이션 바
- * MZ세대를 위한 모바일 친화적 네비게이션
+ * 인증 상태에 따라 보호된 페이지 접근 시 로그인으로 리다이렉트
  */
 export default function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
+
+  // 로그인/회원가입 페이지에서는 네비게이션 숨김
+  if (pathname === "/login" || pathname === "/signup") return null;
 
   const navItems = [
-    { href: "/", icon: faHome, label: "홈" },
-    { href: "/create", icon: faPlus, label: "작성" },
-    { href: "/ranking", icon: faTrophy, label: "랭킹" },
-    { href: "/profile", icon: faUser, label: "Me" },
+    { href: "/", icon: faHome, label: "홈", authRequired: false },
+    { href: "/create", icon: faPlus, label: "작성", authRequired: true },
+    { href: "/ranking", icon: faTrophy, label: "랭킹", authRequired: false },
+    {
+      href: isAuthenticated ? "/profile" : "/login",
+      icon: isAuthenticated ? faUser : faSignInAlt,
+      label: isAuthenticated ? "Me" : "로그인",
+      authRequired: false,
+    },
   ];
+
+  /** 인증 필요 페이지 클릭 시 로그인 가드 */
+  const handleNavClick = (
+    e: React.MouseEvent,
+    item: (typeof navItems)[number],
+  ) => {
+    if (item.authRequired && !isAuthenticated) {
+      e.preventDefault();
+      router.push("/login");
+    }
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-t border-purple-100">
@@ -32,8 +55,9 @@ export default function Navigation() {
             const isActive = pathname === item.href;
             return (
               <Link
-                key={item.href}
+                key={item.label}
                 href={item.href}
+                onClick={(e) => handleNavClick(e, item)}
                 className={`flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 ${
                   isActive
                     ? "text-purple-600 scale-110"

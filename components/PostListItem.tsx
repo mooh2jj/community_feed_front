@@ -35,6 +35,7 @@ import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
 import { Card } from "@/components/ui/card";
 import { PostResponse } from "@/lib/types";
 import { postAPI, storage, fileAPI } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -53,6 +54,7 @@ export default function PostListItem({
   onLikeChange,
 }: PostListItemProps) {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const contentRef = useRef<HTMLDivElement>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
@@ -87,18 +89,24 @@ export default function PostListItem({
     e.preventDefault();
     if (isLoading) return;
 
-    const currentUserEmail = storage.getCurrentUserEmail();
+    // 비로그인 사용자는 좋아요 불가
+    if (!isAuthenticated) {
+      toast.error("로그인이 필요합니다");
+      router.push("/login");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       if (isLiked) {
-        await postAPI.unlikePost(post.id, currentUserEmail);
+        await postAPI.unlikePost(post.id);
         setIsLiked(false);
         setLikeCount((prev) => prev - 1);
         storage.setLikedPost(post.id, false);
         toast.success("좋아요를 취소했습니다");
       } else {
-        await postAPI.likePost(post.id, currentUserEmail);
+        await postAPI.likePost(post.id);
         setIsLiked(true);
         setLikeCount((prev) => prev + 1);
         storage.setLikedPost(post.id, true);

@@ -13,16 +13,27 @@ import {
   faCamera,
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
-import { postAPI, storage, fileAPI } from "@/lib/api";
+import { postAPI, fileAPI } from "@/lib/api";
 import { uploadInlineImages } from "@/lib/imageUploadUtils";
 import { toast } from "sonner";
 import Link from "next/link";
+import AuthGuard from "@/components/AuthGuard";
+import { useAuth } from "@/context/AuthContext";
 
 /**
- * 게시물 작성 페이지
+ * 게시물 작성 페이지 (인증 필요)
  */
-export default function CreatePost() {
+export default function CreatePostPage() {
+  return (
+    <AuthGuard>
+      <CreatePost />
+    </AuthGuard>
+  );
+}
+
+function CreatePost() {
   const router = useRouter();
+  const { user } = useAuth();
   const [content, setContent] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -86,7 +97,6 @@ export default function CreatePost() {
     }
 
     setIsSubmitting(true);
-    const userEmail = storage.getCurrentUserEmail();
 
     try {
       let fileId: string | undefined;
@@ -130,11 +140,11 @@ export default function CreatePost() {
       // 3. 게시물 등록 (fileId 포함)
       const hashtags = extractHashtags(hashtagInput);
 
-      await postAPI.createPost(userEmail, {
+      await postAPI.createPost({
         content: finalContent.trim(),
         fileId: fileId,
         hashtags: hashtags.length > 0 ? hashtags : undefined,
-        visibility: "PUBLIC" as any, // 기본값: 공개
+        visibility: "PUBLIC" as any,
       });
 
       toast.success("✨ 게시물이 등록되었습니다!");

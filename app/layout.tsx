@@ -2,6 +2,7 @@ import "./globals.css";
 import localFont from "next/font/local";
 import Navigation from "@/components/Navigation";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/context/AuthContext";
 
 const pretendard = localFont({
   src: "./../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
@@ -25,9 +26,11 @@ export default function RootLayout({
       <body
         className={`${pretendard.variable} antialiased min-h-screen bg-[#fafafa]`}
       >
-        <div className="pb-20">{children}</div>
-        <Navigation />
-        <Toaster position="top-center" richColors />
+        <AuthProvider>
+          <div className="pb-20">{children}</div>
+          <Navigation />
+          <Toaster position="top-center" richColors />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -1,31 +1,39 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowLeft,
   faUser,
-  faEnvelope,
-  faSave,
   faHeart,
   faPen,
+  faSignOutAlt,
+  faEnvelope,
 } from "@fortawesome/free-solid-svg-icons";
-import { storage, userAPI } from "@/lib/api";
+import { userAPI } from "@/lib/api";
 import { PostResponse } from "@/lib/types";
 import { toast } from "sonner";
 import Link from "next/link";
 import PostCard from "@/components/PostCard";
+import AuthGuard from "@/components/AuthGuard";
+import { useAuth } from "@/context/AuthContext";
 
 /**
  * 마이 페이지 - 탭 구조
- * 내 정보, 좋아요한 글, 내가 쓴 글
+ * 내 정보 (AuthContext 기반), 좋아요한 글, 내가 쓴 글
  */
 export default function ProfilePage() {
-  const [email, setEmail] = useState("");
+  return (
+    <AuthGuard>
+      <ProfileContent />
+    </AuthGuard>
+  );
+}
+
+function ProfileContent() {
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
 
   // 좋아요한 글 상태
@@ -40,22 +48,11 @@ export default function ProfilePage() {
   const [myPostsPage, setMyPostsPage] = useState(1);
   const [myPostsTotalPages, setMyPostsTotalPages] = useState(0);
 
-  useEffect(() => {
-    const currentEmail = storage.getCurrentUserEmail();
-    setEmail(currentEmail);
-  }, []);
-
-  // 좋아요한 글 로드
+  // 좋아요한 글 로드 (JWT 인증 — 이메일 전달 불필요)
   const loadLikedPosts = async (page: number = 1) => {
-    const currentEmail = storage.getCurrentUserEmail();
-    if (!currentEmail) {
-      toast.error("로그인이 필요합니다");
-      return;
-    }
-
     setLikedPostsLoading(true);
     try {
-      const response = await userAPI.getLikedPosts(currentEmail, page, 10);
+      const response = await userAPI.getLikedPosts(page, 10);
       if (response.success && response.data) {
         setLikedPosts(response.data.items);
         setLikedPostsTotalPages(response.data.totalPage);
@@ -73,17 +70,11 @@ export default function ProfilePage() {
     }
   };
 
-  // 내가 쓴 글 로드
+  // 내가 쓴 글 로드 (JWT 인증 — 이메일 전달 불필요)
   const loadMyPosts = async (page: number = 1) => {
-    const currentEmail = storage.getCurrentUserEmail();
-    if (!currentEmail) {
-      toast.error("로그인이 필요합니다");
-      return;
-    }
-
     setMyPostsLoading(true);
     try {
-      const response = await userAPI.getMyPosts(currentEmail, page, 10);
+      const response = await userAPI.getMyPosts(page, 10);
       if (response.success && response.data) {
         setMyPosts(response.data.items);
         setMyPostsTotalPages(response.data.totalPage);
@@ -111,14 +102,14 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSaveEmail = () => {
-    if (!email.trim()) {
-      toast.error("이메일을 입력해주세요");
-      return;
+  // 로그아웃 핸들러
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("로그아웃 되었습니다");
+    } catch {
+      toast.error("로그아웃에 실패했습니다");
     }
-
-    storage.setCurrentUserEmail(email);
-    toast.success("✅ 로그인 되었습니다");
   };
 
   return (
@@ -148,7 +139,16 @@ export default function ProfilePage() {
                   <FontAwesomeIcon icon={faUser} />
                 </div>
               </div>
-              <h2 className="text-2xl font-bold gradient-text">마이 페이지</h2>
+              <h2 className="text-2xl font-bold gradient-text">
+                {user?.name ?? "사용자"}
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                <FontAwesomeIcon
+                  icon={faEnvelope}
+                  className="mr-1 text-purple-400"
+                />
+                {user?.email}
+              </p>
             </div>
 
             {/* 탭 구조 */}
@@ -172,32 +172,66 @@ export default function ProfilePage() {
 
               {/* 내 정보 탭 */}
               <TabsContent value="profile" className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <FontAwesomeIcon
-                      icon={faEnvelope}
-                      className="text-purple-600"
-                    />
-                    이메일 주소
-                  </label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your-email@example.com"
-                    className="border-2 border-purple-200 focus:border-purple-500 rounded-xl"
-                  />
-                  <p className="text-xs text-gray-500">
-                    * 이 이메일로 게시물과 댓글을 작성합니다
-                  </p>
+                <div className="space-y-4">
+                  {/* 사용자 정보 카드 */}
+                  <div className="bg-purple-50 rounded-2xl p-6 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <FontAwesomeIcon
+                        icon={faUser}
+                        className="text-purple-600"
+                      />
+                      <div>
+                        <p className="text-xs text-gray-500">이름</p>
+                        <p className="font-semibold text-gray-800">
+                          {user?.name}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <FontAwesomeIcon
+                        icon={faEnvelope}
+                        className="text-purple-600"
+                      />
+                      <div>
+                        <p className="text-xs text-gray-500">이메일</p>
+                        <p className="font-semibold text-gray-800">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 활동 통계 */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center p-4 bg-white rounded-2xl border border-purple-100">
+                      <p className="text-2xl font-bold text-purple-600">
+                        {user?.postCount ?? 0}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">게시글</p>
+                    </div>
+                    <div className="text-center p-4 bg-white rounded-2xl border border-purple-100">
+                      <p className="text-2xl font-bold text-pink-600">
+                        {user?.followerCount ?? 0}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">팔로워</p>
+                    </div>
+                    <div className="text-center p-4 bg-white rounded-2xl border border-purple-100">
+                      <p className="text-2xl font-bold text-indigo-600">
+                        {user?.followingCount ?? 0}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">팔로잉</p>
+                    </div>
+                  </div>
                 </div>
 
+                {/* 로그아웃 버튼 */}
                 <Button
-                  onClick={handleSaveEmail}
-                  className="w-full py-6 bg-purple-600 hover:bg-purple-700 shadow-lg"
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="w-full py-6 border-2 border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 rounded-2xl"
                 >
-                  <FontAwesomeIcon icon={faSave} className="mr-2" />
-                  로그인
+                  <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" />
+                  로그아웃
                 </Button>
               </TabsContent>
 
