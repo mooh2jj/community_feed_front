@@ -135,11 +135,14 @@ export interface JoinRequest {
   name: string;
 }
 
-/** 토큰 응답 (로그인 / 토큰 갱신) */
+/** 토큰 응답 (로그인 / 토큰 갱신) - 백엔드 LoginResponse DTO */
 export interface TokenResponse {
+  email: string;
+  name: string;
+  roles: string[];
   accessToken: string;
-  tokenType: string;
-  expiresIn: number; // 초 단위
+  refreshToken: string | null; // 서버에서 보안상 null 처리됨
+  status: string;
 }
 
 /** 인증 컨텍스트 타입 */

@@ -53,20 +53,37 @@ function processRefreshQueue(error: Error | null, token: string | null) {
 }
 
 /**
+ * Refresh 실패 시 에러코드를 함께 던지는 커스텀 에러
+ */
+class RefreshTokenError extends Error {
+  constructor(
+    message: string,
+    public readonly errorCode: string,
+  ) {
+    super(message);
+    this.name = "RefreshTokenError";
+  }
+}
+
+/**
  * refreshToken(HttpOnly Cookie)으로 새 accessToken 발급
  * - 쿠키는 브라우저가 자동 전송 (credentials: "include")
+ * - GET 방식, refreshToken은 쿠키에서 서버가 읽음
  */
 async function refreshAccessToken(): Promise<string> {
   const response = await fetch(`${API_BASE_URL}/users/refresh`, {
-    method: "POST",
+    method: "GET",
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    },
   });
 
   if (!response.ok) {
-    throw new Error("토큰 갱신에 실패했습니다.");
+    // 서버 에러 응답 파싱 후 errorCode별 커스텀 에러 throw
+    const errBody = await response
+      .json()
+      .catch(() => ({ message: "토큰 갱신 실패", errorCode: "UNKNOWN" }));
+    const errorCode: string = errBody.errorCode ?? "UNKNOWN";
+    const message: string = errBody.message ?? "토큰 갱신 실패";
+    throw new RefreshTokenError(message, errorCode);
   }
 
   const data: ApiResult<TokenResponse> = await response.json();
@@ -115,43 +132,100 @@ async function fetchAPI<T>(
 
   // ─── 401 자동 갱신 처리 ──────────────────────────────────────────────────
   if (response.status === 401 && !options?._retry && !options?._skipAuth) {
-    // 이미 갱신 중이면 큐에 대기
-    if (isRefreshing) {
-      const newToken = await new Promise<string>((resolve, reject) => {
-        refreshQueue.push({ resolve, reject });
-      });
-      // 새 토큰으로 원래 요청 재시도
-      return fetchAPI<T>(endpoint, {
-        ...options,
-        _retry: true,
-        headers: { ...headers, Authorization: `Bearer ${newToken}` },
-      });
-    }
+    // 응답 body를 먼저 파싱해서 에러 원인 확인
+    const errBody = await response
+      .json()
+      .catch(() => ({ message: "", errorCode: "" }));
+    const errMessage: string = errBody.message ?? "";
 
-    isRefreshing = true;
-
-    try {
-      const newToken = await refreshAccessToken();
-      _accessToken = newToken;
-      processRefreshQueue(null, newToken);
-
-      // 원래 요청 재시도
-      return fetchAPI<T>(endpoint, {
-        ...options,
-        _retry: true,
-        headers: { ...headers, Authorization: `Bearer ${newToken}` },
-      });
-    } catch (refreshError) {
-      processRefreshQueue(refreshError as Error, null);
-      // refreshToken도 만료 → 로그아웃 이벤트 발행
-      _accessToken = null;
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("auth:logout"));
+    // "Expired" 메시지일 때만 refresh 시도 (만료된 토큰)
+    if (errMessage === "Expired") {
+      // 이미 갱신 중이면 큐에 대기
+      if (isRefreshing) {
+        const newToken = await new Promise<string>((resolve, reject) => {
+          refreshQueue.push({ resolve, reject });
+        });
+        return fetchAPI<T>(endpoint, {
+          ...options,
+          _retry: true,
+          headers: { ...headers, Authorization: `Bearer ${newToken}` },
+        });
       }
-      throw refreshError;
-    } finally {
-      isRefreshing = false;
+
+      isRefreshing = true;
+
+      try {
+        const newToken = await refreshAccessToken();
+        _accessToken = newToken;
+        processRefreshQueue(null, newToken);
+
+        // 원래 요청 재시도
+        return fetchAPI<T>(endpoint, {
+          ...options,
+          _retry: true,
+          headers: { ...headers, Authorization: `Bearer ${newToken}` },
+        });
+      } catch (refreshError) {
+        processRefreshQueue(refreshError as Error, null);
+        _accessToken = null;
+
+        if (typeof window !== "undefined") {
+          // errorCode별 이벤트 분기
+          if (refreshError instanceof RefreshTokenError) {
+            const { errorCode, message } = refreshError;
+
+            if (errorCode === "REFRESH_TOKEN_NOT_FOUND") {
+              // Redis에 토큰 없음 / 불일치 → 세션 만료 처리
+              window.dispatchEvent(
+                new CustomEvent("auth:logout", {
+                  detail: {
+                    message: "세션이 만료되었습니다. 다시 로그인해주세요.",
+                  },
+                }),
+              );
+            } else if (errorCode === "REFRESH_TOKEN_INVALID_EXPIRATION") {
+              // 만료 시간 파싱 실패 → 에러 로깅 + 로그인 페이지 이동
+              console.error("[Refresh] 토큰 만료 시간 파싱 실패:", message);
+              window.dispatchEvent(
+                new CustomEvent("auth:logout", {
+                  detail: {
+                    message: "인증 오류가 발생했습니다. 다시 로그인해주세요.",
+                  },
+                }),
+              );
+            } else {
+              // INVALID_TOKEN (Expired / MalFormed) 등 나머지 전체
+              window.dispatchEvent(
+                new CustomEvent("auth:logout", {
+                  detail: {
+                    message: "세션이 만료되었습니다. 다시 로그인해주세요.",
+                  },
+                }),
+              );
+            }
+          } else {
+            // 네트워크 오류 등 예상 외 실패
+            window.dispatchEvent(new Event("auth:logout"));
+          }
+        }
+
+        throw refreshError;
+      } finally {
+        isRefreshing = false;
+      }
     }
+
+    // 토큰 없음 / 블랙리스트(로그아웃) 등 → 로그인 페이지로 이동
+    _accessToken = null;
+    if (typeof window !== "undefined") {
+      // auth:unauthorized 이벤트로 메시지를 함께 전달
+      window.dispatchEvent(
+        new CustomEvent("auth:unauthorized", {
+          detail: { message: errMessage },
+        }),
+      );
+    }
+    throw new Error(errMessage || "인증이 필요합니다.");
   }
 
   // ─── 일반 에러 처리 ─────────────────────────────────────────────────────
@@ -404,14 +478,11 @@ export const authAPI = {
     } as any);
   },
 
-  /** 토큰 갱신 (refreshToken 쿠키 자동 전송) */
+  /** 토큰 갱신 (GET, refreshToken 쿠키 자동 전송) */
   refresh: async (): Promise<ApiResult<TokenResponse>> => {
     const response = await fetch(`${API_BASE_URL}/users/refresh`, {
-      method: "POST",
+      method: "GET",
       credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
     });
 
     if (!response.ok) {
