@@ -14,6 +14,7 @@ import {
   PostUpdateRequest,
   CommentCreateRequest,
   TokenResponse,
+  ChatStreamCallbacks,
 } from "./types";
 
 const API_BASE_URL =
@@ -552,6 +553,124 @@ export const fileAPI = {
     return response.json();
   },
 };
+
+// ─── 챗봇 스트리밍 API ────────────────────────────────────────────────────────
+
+/**
+ * SSE 이벤트 블록 하나를 파싱합니다.
+ *
+ * SSE 형식: "event:xxx\ndata:yyy"
+ * 여러 data: 라인은 \n 으로 합산합니다.
+ */
+function parseSSEBlock(block: string): { event: string; data: string } | null {
+  const lines = block.split("\n");
+  let event = "";
+  const dataLines: string[] = [];
+
+  for (const line of lines) {
+    if (line.startsWith("event:")) {
+      event = line.slice(6); // 'event:' 이후 값
+    } else if (line.startsWith("data:")) {
+      dataLines.push(line.slice(5)); // 'data:' 이후 값 (공백 보존)
+    }
+  }
+
+  if (!event) return null;
+  return { event, data: dataLines.join("\n") };
+}
+
+/**
+ * 챗봇 스트리밍 API 호출 (POST /ai/chat/stream)
+ *
+ * Server-Sent Events 형식으로 응답을 수신합니다:
+ * - event:metadata → 출처 게시글 ID 배열
+ * - event:token    → AI 답변 텍스트 토큰
+ * - event:done     → 스트리밍 완료
+ *
+ * @param query - 사용자 질문 (2~500자)
+ * @param topK  - 참조할 유사 게시글 수 (기본 5, 최대 10)
+ * @param callbacks - 이벤트별 핸들러
+ */
+export async function streamChat(
+  query: string,
+  topK: number = 5,
+  callbacks: ChatStreamCallbacks,
+): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ai/chat/stream`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+      },
+      body: JSON.stringify({ query, topK }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`서버 오류: ${response.status} ${response.statusText}`);
+    }
+
+    if (!response.body) {
+      throw new Error("응답 스트림을 읽을 수 없습니다.");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+    // 이전 청크에서 끊긴 불완전 블록 버퍼
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // 이벤트 블록은 \n\n 으로 구분됨
+      const blocks = buffer.split("\n\n");
+      // 마지막 요소는 아직 끊긴 블록 → 버퍼에 보존
+      buffer = blocks.pop() ?? "";
+
+      for (const block of blocks) {
+        if (!block.trim()) continue;
+
+        const parsed = parseSSEBlock(block);
+        if (!parsed) continue;
+
+        switch (parsed.event) {
+          case "metadata": {
+            try {
+              const meta = JSON.parse(parsed.data) as {
+                sourcePostIds: number[];
+              };
+              callbacks.onMetadata(meta.sourcePostIds ?? []);
+            } catch {
+              // JSON 파싱 실패 시 빈 배열로 처리
+              callbacks.onMetadata([]);
+            }
+            break;
+          }
+          case "token": {
+            callbacks.onToken(parsed.data);
+            break;
+          }
+          case "done": {
+            callbacks.onDone();
+            return; // 스트리밍 완료
+          }
+        }
+      }
+    }
+
+    // done 이벤트 없이 스트림이 종료된 경우에도 완료 처리
+    callbacks.onDone();
+  } catch (error) {
+    callbacks.onError(
+      error instanceof Error
+        ? error
+        : new Error("알 수 없는 오류가 발생했습니다."),
+    );
+  }
+}
 
 /**
  * 로컬스토리지 유틸리티

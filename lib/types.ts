@@ -154,3 +154,34 @@ export interface AuthContextType {
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
 }
+
+// ─── 챗봇 관련 타입 ─────────────────────────────────────────────────────────
+
+/** 채팅 메시지 역할 */
+export type ChatRole = "user" | "ai";
+
+/** UI 채팅 메시지 단위 */
+export interface ChatMessage {
+  /** 고유 메시지 ID */
+  id: string;
+  /** 발신자 역할 */
+  role: ChatRole;
+  /** 메시지 텍스트 (스트리밍 중에는 누적됨) */
+  content: string;
+  /** 답변 출처 게시글 ID 목록 */
+  sourcePostIds?: number[];
+  /** 스트리밍 진행 중 여부 */
+  isStreaming?: boolean;
+}
+
+/** 챗봇 스트리밍 이벤트 콜백 */
+export interface ChatStreamCallbacks {
+  /** SSE metadata 이벤트: 출처 게시글 ID 수신 */
+  onMetadata: (sourcePostIds: number[]) => void;
+  /** SSE token 이벤트: 텍스트 토큰 수신 */
+  onToken: (token: string) => void;
+  /** SSE done 이벤트: 스트리밍 완료 */
+  onDone: () => void;
+  /** 네트워크/파싱 오류 */
+  onError: (error: Error) => void;
+}
