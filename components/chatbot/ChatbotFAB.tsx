@@ -28,8 +28,10 @@ export default function ChatbotFAB() {
 
   return (
     // FAB + 창을 함께 감싸는 고정 컨테이너
+    // pointer-events-none: 컨테이너 자체는 클릭 이벤트를 차단하지 않음
+    // 자식 요소에서 필요할 때만 pointer-events-auto로 활성화
     // bottom-20: Navigation 높이(h-16=4rem) 위 추가 여백, z-40: Navigation(z-50) 아래
-    <div className="fixed bottom-20 right-4 z-40 flex flex-col items-end gap-3">
+    <div className="fixed bottom-20 right-4 z-40 flex flex-col items-end gap-3 pointer-events-none">
       {/* ── 챗봇 창 (슬라이드업 + 페이드인) ─────────────────────────────────── */}
       <div
         className={cn(
@@ -47,6 +49,8 @@ export default function ChatbotFAB() {
       <button
         onClick={handleToggle}
         className={cn(
+          // 컨테이너가 pointer-events-none이므로 버튼은 명시적으로 활성화
+          "pointer-events-auto",
           // 크기 / 형태
           "w-14 h-14 rounded-full",
           // 색상

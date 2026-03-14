@@ -113,6 +113,14 @@ export default function PostDetailPage() {
     loadComments();
   }, [postId]);
 
+  // user 상태가 변경될 때마다 내 게시물/댓글 여부 재계산
+  // (최초 페이지 로드 시 AuthContext가 초기화되기 전에 loadPost가 실행될 수 있으므로)
+  useEffect(() => {
+    if (post && user) {
+      setIsMyPost(post.authorEmail === user.email);
+    }
+  }, [user, post]);
+
   // Syntax highlighting 적용
   useEffect(() => {
     if (contentRef.current && post && !isEditing) {
