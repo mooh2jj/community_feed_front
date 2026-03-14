@@ -602,7 +602,10 @@ export async function streamChat(
       headers: {
         "Content-Type": "application/json",
         Accept: "text/event-stream",
+        // JWT 인증 헤더 부착 (로그인 상태인 경우)
+        ...(_accessToken ? { Authorization: `Bearer ${_accessToken}` } : {}),
       },
+      credentials: "include", // refreshToken 쿠키 자동 전송
       body: JSON.stringify({ query, topK }),
     });
 
