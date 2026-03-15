@@ -59,7 +59,7 @@ import { uploadInlineImages } from "@/lib/imageUploadUtils";
 export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const postId = Number(params.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -108,18 +108,14 @@ export default function PostDetailPage() {
       .filter((tag) => tag.length > 1); // # 단독은 제외
   };
 
+  // authLoading이 false가 된 시점(Auth 초기화 완료 후)에 데이터 로드
+  // → 새로고침 시에도 user가 세팅된 상태로 API를 호출하므로
+  //   isMyPost, isLiked 등 사용자 맞춤 데이터가 정확하게 초기화됨
   useEffect(() => {
+    if (authLoading) return;
     loadPost();
     loadComments();
-  }, [postId]);
-
-  // user 상태가 변경될 때마다 내 게시물/댓글 여부 재계산
-  // (최초 페이지 로드 시 AuthContext가 초기화되기 전에 loadPost가 실행될 수 있으므로)
-  useEffect(() => {
-    if (post && user) {
-      setIsMyPost(post.authorEmail === user.email);
-    }
-  }, [user, post]);
+  }, [postId, authLoading]);
 
   // Syntax highlighting 적용
   useEffect(() => {
