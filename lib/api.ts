@@ -18,7 +18,7 @@ import {
 } from "./types";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8090/api/v1";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
 // 환경변수 확인 로그
 if (typeof window !== "undefined") {
@@ -507,13 +507,20 @@ export const authAPI = {
  * 파일 관련 API
  */
 export const fileAPI = {
-  // 이미지 URL 생성 (파일명 기반)
+  // 이미지 URL 생성 (Next.js API 프록시 경유)
+  // → 브라우저 <Image src>는 헤더 추가 불가이므로
+  //   /api/images 프록시를 통해 서버 사이드에서 Authorization 헤더를 부착
   getImageUrl: (
     filename: string,
     type: "POST" | "USER" | "THUMBNAIL" = "POST",
   ): string => {
     if (!filename) return "";
-    return `${API_BASE_URL}/files/images/view?filename=${encodeURIComponent(filename)}&type=${type}`;
+    const params = new URLSearchParams({ filename, type });
+    // accessToken이 있으면 프록시로 전달 (서버→백엔드 요청 시 헤더 부착)
+    if (_accessToken) {
+      params.set("token", _accessToken);
+    }
+    return `/api/images?${params.toString()}`;
   },
 
   // 파일 업로드
