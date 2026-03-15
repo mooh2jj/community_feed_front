@@ -25,7 +25,7 @@ const WELCOME_MESSAGE: ChatMessage = {
   id: "welcome",
   role: "ai",
   content:
-    "안녕하세요! 저는 커뮤니티 AI 어시스턴트예요 ✨\n\n" +
+    "안녕하세요! 저는 StudyMate AI 어시스턴트예요 ✨\n\n" +
     "이 커뮤니티의 게시글을 기반으로 궁금한 점을 답해드릴게요.\n" +
     "어떤 주제가 궁금하신가요?",
   sourcePostIds: [],
@@ -241,7 +241,7 @@ export default function ChatbotWindow({ onClose }: Props) {
           {/* 타이틀 + 상태 */}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold truncate">
-              커뮤니티 AI 어시스턴트
+              StudyMate AI 어시스턴트
             </p>
             <div className="flex items-center gap-1.5">
               <span
