@@ -14,7 +14,7 @@ const pretendard = localFont({
 });
 
 const BASE_URL = "https://study-mate.cloud";
-const OG_IMAGE = "https://metatags.io/images/meta-tags.png";
+const OG_IMAGE = "/os-image.png";
 
 export const metadata: Metadata = {
   title: "StudyMate - 스터디 인증 커뮤니티",
