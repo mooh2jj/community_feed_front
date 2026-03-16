@@ -64,12 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.replace("/login");
     };
 
-    // 토큰 없음 / 블랙리스트 등 바로 로그인 페이지로 이동
-    const handleUnauthorized = (e: Event) => {
-      const message = (e as CustomEvent<{ message: string }>).detail?.message;
+    // 토큰 없음 / 블랙리스트 등 → "로그인이 필요합니다" 안내 후 로그인 페이지로 이동
+    const handleUnauthorized = () => {
       setAccessToken(null);
       setUser(null);
-      toast.error(message || "인증이 필요합니다.");
+      toast.info("로그인이 필요합니다.");
       router.replace("/login");
     };
 
