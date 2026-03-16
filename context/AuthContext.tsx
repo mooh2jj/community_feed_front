@@ -6,6 +6,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { useRouter } from "next/navigation";
 import { UserResponse, AuthContextType } from "@/lib/types";
@@ -20,6 +21,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<UserResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  /**
+   * 중복 리다이렉트 방지 플래그
+   * - 동시에 여러 API가 401을 반환할 때 토스트/리다이렉트가 중복 실행되는 것을 막는다
+   * - useRef를 사용해 리렌더링 없이 상태를 추적
+   */
+  const isRedirectingRef = useRef(false);
 
   /**
    * 앱 시작 시 silent refresh → 사용자 정보 복원
@@ -54,6 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   useEffect(() => {
     const handleForceLogout = (e: Event) => {
+      // 이미 리다이렉트 중이면 무시
+      if (isRedirectingRef.current) return;
+      isRedirectingRef.current = true;
+
       // CustomEvent로 메시지가 전달된 경우 해당 메시지 사용
       const message =
         (e as CustomEvent<{ message?: string }>).detail?.message ??
@@ -64,8 +76,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.replace("/login");
     };
 
-    // 토큰 없음 / 블랙리스트 등 → "로그인이 필요합니다" 안내 후 로그인 페이지로 이동
+    // 토큰 없음 / 블랙리스트 등 → 최초 1회만 토스트 + 리다이렉트 (동시 다발 401 중복 방지)
     const handleUnauthorized = () => {
+      // 이미 리다이렉트 중이면 무시
+      if (isRedirectingRef.current) return;
+      isRedirectingRef.current = true;
+
       setAccessToken(null);
       setUser(null);
       toast.info("로그인이 필요합니다.");
@@ -77,6 +93,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       window.removeEventListener("auth:logout", handleForceLogout);
       window.removeEventListener("auth:unauthorized", handleUnauthorized);
+      // 컴포넌트 언마운트 시 플래그 초기화 (페이지 재진입 대비)
+      isRedirectingRef.current = false;
     };
   }, [router]);
 
