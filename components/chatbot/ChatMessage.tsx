@@ -126,9 +126,13 @@ export default function ChatMessage({ message }: Props) {
         </div>
 
         {/* 출처 게시글 링크 (스트리밍 완료 + 출처 있을 때만 표시) */}
+        {/* "해당 정보는 게시글에서 찾을 수 없습니다." 응답 시에는 출처 숨김 */}
         {!message.isStreaming &&
           message.sourcePostIds &&
-          message.sourcePostIds.length > 0 && (
+          message.sourcePostIds.length > 0 &&
+          !message.content.includes(
+            "해당 정보는 게시글에서 찾을 수 없습니다",
+          ) && (
             <div className="flex flex-wrap items-center gap-1">
               <span className="text-[11px] text-gray-400">출처:</span>
               {message.sourcePostIds.map((id) => (
