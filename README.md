@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Community Feed Front-end (커뮤니티 피드 프론트엔드)
 
-## Getting Started
+안녕하세요! 👋 이 프로젝트는 커뮤니티 피드 서비스의 프론트엔드 웹 애플리케이션입니다.
+주니어 개발자 및 새로 합류하신 분들이 프로젝트를 쉽게 이해하고 적응할 수 있도록 가이드를 작성했습니다.
 
-First, run the development server:
+## 🚀 프로젝트 개요
+이 프로젝트는 최신 React 및 Next.js 프레임워크를 기반으로 구축되었습니다. 
+풍부한 텍스트 에디터(Tiptap), 견고한 폼 검증(React Hook Form + Zod), 그리고 현대적인 UI 스타일링(Tailwind CSS)을 사용하여 개발되었습니다.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🛠️ 주요 기술 스택 (Tech Stack)
+
+### Core
+- **[Next.js (v16)](https://nextjs.org/)**: React 기반의 SSR(서버 사이드 렌더링) 및 라우팅 프레임워크 (App Router 사용)
+- **[React (v19)](https://react.dev/)**: 사용자 인터페이스를 만들기 위한 자바스크립트 라이브러리
+- **TypeScript**: 정적 타입 검사를 통해 코드의 안정성을 높여주는 자바스크립트 상위 집합 언어
+
+### Styling & UI
+- **[Tailwind CSS (v4)](https://tailwindcss.com/)**: 유틸리티 퍼스트 CSS 프레임워크로, 빠르고 일관된 스타일링 제공
+- **[Radix UI](https://www.radix-ui.com/)**: 접근성이 뛰어난 Headless UI 컴포넌트 라이브러리 (Tabs, Label 등 사용)
+- **Lucide React / FontAwesome**: 직관적이고 가벼운 아이콘 라이브러리
+- **next-themes**: 다크 모드 및 테마 관리를 위한 라이브러리
+
+### Form & State & Editor
+- **[React Hook Form](https://react-hook-form.com/)**: 성능이 뛰어난 폼(Form) 상태 관리 라이브러리
+- **[Zod](https://zod.dev/)**: 타입 안정성을 보장하는 스키마 선언 및 유효성 검사 라이브러리 (폼 검증에 주로 사용)
+- **[Tiptap](https://tiptap.dev/)**: Headless 기반의 강력한 리치 텍스트 에디터 라이브러리 (코드 블록, 이미지, 링크 지원)
+- **date-fns**: 편리한 날짜 데이터 포맷팅 및 조작 라이브러리
+
+## 📁 주요 디렉토리 구조
+프로젝트의 전반적인 폴더 구조와 각 폴더의 역할입니다:
+
+```text
+├── app/               # Next.js App Router의 진입점. 페이지(page) 및 라우트(route) 설정
+├── components/        # 재사용 가능한 공통 UI 컴포넌트 모음 (버튼, 인풋, 카드 등)
+├── context/           # 전역 상태를 관리하기 위한 React Context 모음
+├── lib/               # 유틸리티 함수 및 공통 비즈니스 로직 모음
+├── public/            # 정적 파일 (이미지, 폰트, 파비콘 등) 보관 장소
+└── docs/              # 프로젝트 관련 문서 보관
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🏁 시작하기 (Getting Started)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+프로젝트를 로컬에서 실행하기 위한 단계별 안내입니다.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. 패키지 설치
+먼저 프로젝트에 필요한 라이브러리들을 설치합니다.
+```bash
+npm install
+```
 
-## Learn More
+### 2. 환경 변수 설정
+프로젝트 루트 경로에 있는 `.env.local` 파일(없는 경우 생성)을 확인하고 알맞은 환경 변수들을 구성합니다.
 
-To learn more about Next.js, take a look at the following resources:
+### 3. 개발 서버 실행
+다음 명령어를 통해 로컬 개발 서버를 실행합니다.
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+서버가 성공적으로 켜지면 브라우저에서 [http://localhost:3000](http://localhost:3000) 로 접속하여 결과를 확인할 수 있습니다.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 4. 코드 편집 시작하기
+- 메인 페이지를 수정하고 싶다면 `app/page.tsx` 폴더를 열어 코드를 편집해 보세요.
+- 코드를 수정하고 저장하면 화면에 즉시 반영(Auto-updates)됩니다.
 
-## Deploy on Vercel
+## 📝 개발 규칙 및 참고 사항
+- **코드 포맷팅 및 컨벤션**: 프로젝트 내에 설정된 ESLint(`eslint.config.mjs`) 규칙을 준수하여 일관된 코드 스타일을 유지해 주세요.
+- **주석 작성**: 코드를 작성할 때는 다른 개발자가 읽기 쉽도록 기능이나 목적에 대해 친절한 주석을 달아주세요.
+- **가독성 확보**: 읽기 편한 코드가 가장 좋은 코드입니다. 명확한 변수명, 함수명을 사용하고 중복되는 코드는 분리해 주세요.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🤝 조언
+코드나 아키텍처 부분에서 잘 이해가 안 되는 곳이 있다면 혼자 고민하기보다는 언제든지 팀원들에게 질문해 주세요. 여러분의 성장을 진심으로 응원합니다! 😊
