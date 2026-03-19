@@ -339,6 +339,11 @@ export const postAPI = {
     });
     return fetchAPI(`/posts/users/${encodeURIComponent(userEmail)}?${params}`);
   },
+
+  // 전체 해시태그 목록 조회 (예: ["#책", "#개발", ...])
+  getTags: async (): Promise<ApiResult<string[]>> => {
+    return fetchAPI(`/posts/tags`);
+  },
 };
 
 /**

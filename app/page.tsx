@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import PostFeed from "@/components/PostFeed";
+import TagBar from "@/components/TagBar";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -37,6 +38,7 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const [sortBy, setSortBy] = useState<SortOption>("latest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   // URL 파라미터에서 검색어 직접 읽기
   const initialSearch = searchParams.get("search") ?? "";
@@ -108,20 +110,31 @@ function HomeContent() {
 
       {/* 메인 컨텐츠 */}
       <main className="max-w-5xl mx-auto px-4 py-6">
-        {/* 웰컴 배너 */}
-        <div className="mb-8 p-6 rounded-3xl bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-3d">
-          <h2 className="text-2xl font-bold mb-2">🔥 오늘도 열공!</h2>
-          <p className="text-purple-100">
-            친구들의 스터디를 확인하고 응원해주세요!
-          </p>
+        {/* 웹콤 배너 + 태그 바 */}
+        <div className="mb-8 rounded-3xl bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-3d overflow-hidden">
+          <div className="p-6 pb-4">
+            <h2 className="text-2xl font-bold mb-2">🔥 오늘도 열공!</h2>
+            <p className="text-purple-100">
+              친구들의 스터디를 확인하고 응원해주세요!
+            </p>
+          </div>
+          {/* 태그 바 — 배너 하단 */}
+          <div className="px-6 pb-5">
+            <TagBar activeTag={activeTag} onTagClick={setActiveTag} />
+          </div>
         </div>
 
         {/* 피드 */}
         <PostFeed
           sortBy={sortBy}
           viewMode={viewMode}
-          onResetSort={() => setSortBy("latest")}
+          onResetSort={() => {
+            setSortBy("latest");
+            setActiveTag(null);
+          }}
           initialSearchKeyword={initialSearch}
+          activeTag={activeTag}
+          onTagClear={() => setActiveTag(null)}
         />
       </main>
     </div>

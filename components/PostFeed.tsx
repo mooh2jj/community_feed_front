@@ -57,6 +57,10 @@ interface PostFeedProps {
   viewMode?: ViewMode;
   onResetSort?: () => void;
   initialSearchKeyword?: string;
+  /** 외부(page.tsx)에서 주입하는 태그 필터 (예: "#책") */
+  activeTag?: string | null;
+  /** 검색 초기화 시 부모에게 태그 해제 알림 */
+  onTagClear?: () => void;
 }
 
 /** 리스트 뷰 클라이언트 페이지네이션 시 한 페이지에 표시할 게시글 수 */
@@ -74,6 +78,8 @@ export default function PostFeed({
   viewMode = "grid",
   onResetSort,
   initialSearchKeyword = "",
+  activeTag = null,
+  onTagClear,
 }: PostFeedProps) {
   const [posts, setPosts] = useState<PostResponse[]>([]);
   const [loading, setLoading] = useState(false);
@@ -126,6 +132,24 @@ export default function PostFeed({
       setSearchInput(clean);
     }
   }, [initialSearchKeyword]);
+
+  // 외부 태그 변경 시 searchKeyword 동기화
+  useEffect(() => {
+    if (activeTag) {
+      const keyword = activeTag.startsWith("#")
+        ? activeTag.slice(1)
+        : activeTag;
+      setSearchKeyword(keyword);
+      setSearchInput(keyword);
+    } else {
+      // 태그 해제 시 검색어도 초기화 (단, initialSearchKeyword가 있으면 유지)
+      if (!initialSearchKeyword) {
+        setSearchKeyword("");
+        setSearchInput("");
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTag]);
 
   // sortBy · searchKeyword · viewMode 변경 시 피드 초기화
   useEffect(() => {
@@ -255,6 +279,7 @@ export default function PostFeed({
     setSearchInput(target);
     setSearchKeyword(target);
     setShowDropdown(false);
+    onTagClear?.(); // 직접 검색 시 부모 태그 해제
     setRecentSearches(recentSearchStorage.add(target));
   };
 
@@ -262,6 +287,7 @@ export default function PostFeed({
     setSearchInput("");
     setSearchKeyword("");
     setShowDropdown(false);
+    onTagClear?.(); // 부모에게 태그 해제 알림
   };
 
   const handleRemoveRecent = (e: React.MouseEvent, keyword: string) => {
@@ -376,6 +402,7 @@ export default function PostFeed({
             </Button>
           )}
         </div>
+
         {searchKeyword && (
           <div className="text-center mt-4">
             <span className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm">
