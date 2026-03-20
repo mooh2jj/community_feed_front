@@ -30,6 +30,7 @@ export interface PostResponse {
   commentCount: number;
   viewCount: number;
   hashtags?: string[]; // 해시태그 목록
+  isFollowing?: boolean; // 현재 로그인 사용자가 작성자를 팔로우 중인지 여부
   createdAt: string;
   modifiedAt: string;
 }
@@ -53,9 +54,34 @@ export interface UserResponse {
   email: string;
   name: string;
   profileImageUrl?: string;
+  roles?: string[]; // 백엔드 응답에 포함되는 역할 목록
   followerCount: number;
   followingCount: number;
   postCount: number;
+  isFollowing?: boolean; // 현재 로그인 사용자가 해당 유저를 팔로우 중인지 여부
+}
+
+// 팔로우 API 응답
+export interface FollowResponse {
+  targetEmail: string;
+  followerCount: number;
+}
+
+// 팔로워/팔로잉 목록의 단일 유저 요약
+export interface UserSummaryResponse {
+  email: string;
+  name: string;
+  profileImageUrl?: string;
+  isFollowing: boolean;
+}
+
+// 팔로워/팔로잉 목록 페이지 응답
+export interface FollowListResponse {
+  content: UserSummaryResponse[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
 }
 
 // Slice 응답 (무한 스크롤)

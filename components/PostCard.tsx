@@ -38,6 +38,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import FollowButton from "@/components/FollowButton";
 
 interface PostCardProps {
   post: PostResponse;
@@ -182,12 +183,18 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
                 className="object-cover"
               />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm text-gray-900">
                 {post.authorName}
               </p>
               <p className="text-xs text-gray-500">{timeAgo}</p>
             </div>
+            {post.authorEmail && (
+              <FollowButton
+                targetEmail={post.authorEmail}
+                initialIsFollowing={post.isFollowing ?? false}
+              />
+            )}
           </div>
 
           {/* 내용 */}

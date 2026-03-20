@@ -39,6 +39,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
+import FollowButton from "@/components/FollowButton";
 
 interface PostListItemProps {
   post: PostResponse;
@@ -184,7 +185,7 @@ export default function PostListItem({
                   className="object-cover"
                 />
               </div>
-              <div className="flex items-center gap-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
                 <span className="font-semibold text-sm text-gray-900 truncate">
                   {post.authorName}
                 </span>
@@ -192,6 +193,12 @@ export default function PostListItem({
                   {timeAgo}
                 </span>
               </div>
+              {post.authorEmail && (
+                <FollowButton
+                  targetEmail={post.authorEmail}
+                  initialIsFollowing={post.isFollowing ?? false}
+                />
+              )}
             </div>
 
             {/* 본문 미리보기 */}

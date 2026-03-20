@@ -15,6 +15,8 @@ import {
   CommentCreateRequest,
   TokenResponse,
   ChatStreamCallbacks,
+  FollowResponse,
+  FollowListResponse,
 } from "./types";
 
 const API_BASE_URL =
@@ -565,7 +567,50 @@ export const fileAPI = {
     return response.json();
   },
 };
+/**
+ * 팔로우 관련 API
+ */
+export const followAPI = {
+  // 팔로우 (POST /users/{email}/follow)
+  follow: async (targetEmail: string): Promise<ApiResult<FollowResponse>> => {
+    return fetchAPI(`/users/${encodeURIComponent(targetEmail)}/follow`, {
+      method: "POST",
+    });
+  },
 
+  // 팔로우 취소 (DELETE /users/{email}/follow)
+  unfollow: async (targetEmail: string): Promise<ApiResult<FollowResponse>> => {
+    return fetchAPI(`/users/${encodeURIComponent(targetEmail)}/follow`, {
+      method: "DELETE",
+    });
+  },
+
+  // 팔로워 목록 조회 (GET /users/{email}/followers)
+  getFollowers: async (
+    email: string,
+    page: number = 0,
+    size: number = 20,
+  ): Promise<ApiResult<FollowListResponse>> => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+    });
+    return fetchAPI(`/users/${encodeURIComponent(email)}/followers?${params}`);
+  },
+
+  // 팔로잉 목록 조회 (GET /users/{email}/following)
+  getFollowing: async (
+    email: string,
+    page: number = 0,
+    size: number = 20,
+  ): Promise<ApiResult<FollowListResponse>> => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+    });
+    return fetchAPI(`/users/${encodeURIComponent(email)}/following?${params}`);
+  },
+};
 // ─── 챗봇 스트리밍 API ────────────────────────────────────────────────────────
 
 /**
