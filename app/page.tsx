@@ -65,7 +65,7 @@ function HomeContent() {
       // 히스토리를 교체하여 파라미터 제거 (뒤로가기 시 루프 방지)
       router.replace("/");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   /**
@@ -207,6 +207,37 @@ function HomeContent() {
         className="hidden"
         onChange={handlePdfImport}
       />
+
+      {/* PDF 업로드 진행 중 전체화면 오버레이 */}
+      {isPdfUploading && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-5 px-10 py-8 bg-white rounded-3xl shadow-2xl">
+            {/* 회전 링 애니메이션 */}
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 rounded-full border-4 border-indigo-100" />
+              <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <FontAwesomeIcon
+                  icon={faFile}
+                  className="text-indigo-400 text-xl"
+                />
+              </div>
+            </div>
+            <div className="text-center">
+              <p className="font-bold text-gray-800 text-base">
+                AI가 PDF를 분석 중입니다
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                잠시만 기다려 주세요...
+              </p>
+            </div>
+            {/* 진행 파동 바 */}
+            <div className="w-48 h-1.5 bg-indigo-100 rounded-full overflow-hidden">
+              <div className="h-full bg-linear-to-r from-indigo-400 to-purple-500 rounded-full animate-[pulse_1.2s_ease-in-out_infinite] w-full" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 글쓰기 방식 선택 모달 */}
       {showWriteModal && (
