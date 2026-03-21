@@ -286,12 +286,15 @@ function ProfileContent() {
 
                   {/* 활동 통계 — 팔로워/팔로잉 클릭 시 해당 탭으로 이동 */}
                   <div className="grid grid-cols-3 gap-3">
-                    <div className="text-center p-4 bg-white rounded-2xl border border-purple-100">
+                    <button
+                      onClick={() => handleTabChange("posts")}
+                      className="text-center p-4 bg-white rounded-2xl border border-purple-100 hover:border-purple-300 hover:bg-purple-50 transition-colors cursor-pointer"
+                    >
                       <p className="text-2xl font-bold text-purple-600">
                         {freshUser?.postCount ?? 0}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">게시글</p>
-                    </div>
+                    </button>
                     <button
                       onClick={() => handleTabChange("followers")}
                       className="text-center p-4 bg-white rounded-2xl border border-purple-100 hover:border-pink-300 hover:bg-pink-50 transition-colors cursor-pointer"
