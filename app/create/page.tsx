@@ -12,10 +12,8 @@ import {
   faArrowLeft,
   faCamera,
   faTrash,
-  faFile,
-  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
-import { postAPI, fileAPI, aiAPI } from "@/lib/api";
+import { postAPI, fileAPI } from "@/lib/api";
 import { uploadInlineImages } from "@/lib/imageUploadUtils";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -46,10 +44,6 @@ function CreatePost() {
   const pendingFilesRef = useRef<Map<string, File>>(new Map());
   // 인증 사진 파일 input ref (교체 시 click() 호출용)
   const imageInputRef = useRef<HTMLInputElement>(null);
-  // PDF 업로드 파일 input ref
-  const pdfInputRef = useRef<HTMLInputElement>(null);
-  // PDF AI 자동 등록 중 로딩 상태
-  const [isPdfUploading, setIsPdfUploading] = useState(false);
 
   // 해시태그 추출 함수 (공백, 쉼표로 구분)
   const extractHashtags = (input: string): string[] => {
@@ -83,47 +77,6 @@ function CreatePost() {
   const handleRemoveImage = () => {
     setImagePreview(null);
     setSelectedFile(null);
-  };
-
-  /**
-   * PDF 파일 선택 후 AI import API로 게시글 자동 등록
-   * - multipart/form-data로 파일 전송
-   * - 성공 시 toast 포토 후 홈으로 이동
-   */
-  const handlePdfImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    // 입력값 리셋 (동일 파일 재선택 허용)
-    e.target.value = "";
-
-    // PDF 파일 여부 컴체크
-    if (file.type !== "application/pdf") {
-      toast.error("PDF 파일만 업로드할 수 있습니다");
-      return;
-    }
-
-    setIsPdfUploading(true);
-    try {
-      // 해시태그 추출 (기존 hashtagInput 사용)
-      const hashtags = extractHashtags(hashtagInput);
-      const result = await aiAPI.importPdf(
-        file,
-        "PUBLIC",
-        hashtags.length > 0 ? hashtags : undefined,
-      );
-
-      if (result.success) {
-        toast.success("📄 PDF가 게시글로 등록되었습니다!");
-        router.push("/");
-      } else {
-        toast.error(result.message ?? "PDF 등록에 실패했습니다");
-      }
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : "PDF 등록 중 오류가 발생했습니다";
-      toast.error(msg);
-    } finally {
-      setIsPdfUploading(false);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -225,64 +178,6 @@ function CreatePost() {
       {/* 메인 컨텐츠 */}
       <main className="max-w-screen-lg mx-auto px-4 py-8">
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto space-y-6">
-          {/* PDF AI 자동 등록 섹션 */}
-          <div className="rounded-3xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 p-6">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <FontAwesomeIcon
-                icon={faFile}
-                className="text-4xl text-indigo-400"
-              />
-              <div>
-                <p className="font-semibold text-gray-800">
-                  🤖 PDF로 게시글 자동 등록
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  PDF를 업로드하면 AI가 파싱하여 게시글을 자동으로 등록합니다
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isPdfUploading}
-                onClick={() => pdfInputRef.current?.click()}
-                className="border-2 border-indigo-400 text-indigo-600 hover:bg-indigo-100 rounded-2xl px-6"
-              >
-                {isPdfUploading ? (
-                  <>
-                    <FontAwesomeIcon
-                      icon={faSpinner}
-                      className="mr-2 animate-spin"
-                    />
-                    AI 분석 중...
-                  </>
-                ) : (
-                  <>
-                    <FontAwesomeIcon icon={faFile} className="mr-2" />
-                    PDF 파일 선택
-                  </>
-                )}
-              </Button>
-              {/* 해시태그 사용 안내 */}
-              <p className="text-xs text-indigo-500">
-                아래 해시태그 입력 시 PDF 게시글에도 적용됩니다
-              </p>
-            </div>
-            {/* 숨겨진 PDF input */}
-            <input
-              ref={pdfInputRef}
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={handlePdfImport}
-            />
-          </div>
-
-          {/* 구분선 */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1 border-t border-purple-200" />
-            <span className="text-xs text-gray-400 shrink-0">or 직접 게시글 작성</span>
-            <div className="flex-1 border-t border-purple-200" />
-          </div>
           {/* 이미지 업로드 */}
           <div className="space-y-2">
             <Label

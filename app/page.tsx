@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useRef, Suspense, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import PostFeed from "@/components/PostFeed";
 import TagBar from "@/components/TagBar";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,15 @@ import {
   faStar,
   faGrip,
   faList,
+  faPen,
+  faFile,
+  faSpinner,
+  faXmark,
   type IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import PostCardSkeleton from "@/components/PostCardSkeleton";
+import { aiAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 type SortOption = "latest" | "popular" | "views";
 export type ViewMode = "grid" | "list";
@@ -36,12 +42,67 @@ const sortOptions: {
  */
 function HomeContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [sortBy, setSortBy] = useState<SortOption>("latest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  // 피드를 강제 재조회할 카운터 (PDF 등록 성공 후 피드 갱신)
+  const [feedKey, setFeedKey] = useState(0);
+
+  // PDF 업로드 상태
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const [isPdfUploading, setIsPdfUploading] = useState(false);
+  // 글쓰기 방식 선택 모달 표시 상태
+  const [showWriteModal, setShowWriteModal] = useState(false);
 
   // URL 파라미터에서 검색어 직접 읽기
   const initialSearch = searchParams.get("search") ?? "";
+
+  // compose=true 파라미터 감지 → 모달 자동 오픈 후 URL 파라미터 제거
+  useEffect(() => {
+    if (searchParams.get("compose") === "true") {
+      setShowWriteModal(true);
+      // 히스토리를 교체하여 파라미터 제거 (뒤로가기 시 루프 방지)
+      router.replace("/");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  /**
+   * PDF 파일 선택 → aiAPI.importPdf() → 피드 새로고침
+   * 비로그인 상태면 로그인 페이지로 리다이렉트
+   */
+  const handlePdfImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // 동일 파일 재선택 허용
+    e.target.value = "";
+
+    if (file.type !== "application/pdf") {
+      toast.error("PDF 파일만 업로드할 수 있습니다");
+      return;
+    }
+
+    setIsPdfUploading(true);
+    try {
+      const result = await aiAPI.importPdf(file, "PUBLIC");
+      if (result.success) {
+        toast.success("📄 PDF가 게시글로 등록되었습니다!");
+        // 피드 컴포넌트를 언마운트→리마운트시켜 최신 목록 재조회
+        setFeedKey((k) => k + 1);
+      } else {
+        toast.error(result.message ?? "PDF 등록에 실패했습니다");
+      }
+    } catch (error) {
+      const msg =
+        error instanceof Error
+          ? error.message
+          : "PDF 등록 중 오류가 발생했습니다";
+      toast.error(msg);
+    } finally {
+      setIsPdfUploading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -123,8 +184,9 @@ function HomeContent() {
           <TagBar activeTag={activeTag} onTagClick={setActiveTag} />
         </div>
 
-        {/* 피드 */}
+        {/* 피드 (key 변경 시 언마운트→리마운트로 데이터 재조회) */}
         <PostFeed
+          key={feedKey}
           sortBy={sortBy}
           viewMode={viewMode}
           onResetSort={() => {
@@ -136,6 +198,88 @@ function HomeContent() {
           onTagClear={() => setActiveTag(null)}
         />
       </main>
+
+      {/* 숨겨진 PDF input */}
+      <input
+        ref={pdfInputRef}
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        onChange={handlePdfImport}
+      />
+
+      {/* 글쓰기 방식 선택 모달 */}
+      {showWriteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setShowWriteModal(false)}
+        >
+          <div
+            className="w-full max-w-sm mx-4 mb-6 sm:mb-0 bg-white rounded-3xl shadow-2xl p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 모달 헤더 */}
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-800">게시글 작성</h3>
+              <button
+                onClick={() => setShowWriteModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500">
+              원하는 작성 방식을 선택하세요
+            </p>
+
+            {/* 직접 작성 */}
+            <button
+              onClick={() => {
+                setShowWriteModal(false);
+                router.push("/create");
+              }}
+              className="w-full flex items-center gap-4 p-4 bg-purple-50 hover:bg-purple-100 border-2 border-purple-200 hover:border-purple-400 rounded-2xl transition-colors text-left group"
+            >
+              <div className="w-12 h-12 rounded-xl bg-linear-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+                <FontAwesomeIcon icon={faPen} className="text-white text-lg" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800 group-hover:text-purple-700">
+                  직접 작성
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  에디터로 게시글을 직접 작성합니다
+                </p>
+              </div>
+            </button>
+
+            {/* PDF 업로드 */}
+            <button
+              disabled={isPdfUploading}
+              onClick={() => {
+                setShowWriteModal(false);
+                pdfInputRef.current?.click();
+              }}
+              className="w-full flex items-center gap-4 p-4 bg-indigo-50 hover:bg-indigo-100 border-2 border-indigo-200 hover:border-indigo-400 rounded-2xl transition-colors text-left group disabled:opacity-50"
+            >
+              <div className="w-12 h-12 rounded-xl bg-linear-to-br from-indigo-500 to-blue-500 flex items-center justify-center shrink-0">
+                <FontAwesomeIcon
+                  icon={isPdfUploading ? faSpinner : faFile}
+                  className={`text-white text-lg ${isPdfUploading ? "animate-spin" : ""}`}
+                />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800 group-hover:text-indigo-700">
+                  PDF 업로드
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  PDF를 업로드하면 AI가 자동으로 게시글을 등록합니다
+                </p>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

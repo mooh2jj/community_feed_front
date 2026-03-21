@@ -26,7 +26,7 @@ export default function Navigation() {
 
   const navItems = [
     { href: "/", icon: faHome, label: "홈", authRequired: false },
-    { href: "/create", icon: faPlus, label: "작성", authRequired: true },
+    { href: "/?compose=true", icon: faPlus, label: "작성", authRequired: true },
     { href: "/ranking", icon: faTrophy, label: "랭킹", authRequired: false },
     {
       href: isAuthenticated ? "/profile" : "/login",

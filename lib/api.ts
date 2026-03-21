@@ -640,14 +640,11 @@ export const aiAPI = {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch(
-      `${API_BASE_URL}/ai/pdf/import?${params}`,
-      {
-        method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      },
-    );
+    const res = await fetch(`${API_BASE_URL}/ai/pdf/import?${params}`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");

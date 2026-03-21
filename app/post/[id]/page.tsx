@@ -668,7 +668,9 @@ export default function PostDetailPage() {
                 <div
                   ref={contentRef}
                   className="prose prose-sm max-w-none text-gray-700"
-                  dangerouslySetInnerHTML={{ __html: renderContent(post.content) }}
+                  dangerouslySetInnerHTML={{
+                    __html: renderContent(post.content),
+                  }}
                 />
 
                 {/* 해시태그 표시 */}
