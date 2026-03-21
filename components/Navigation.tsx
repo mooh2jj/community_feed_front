@@ -48,7 +48,8 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-t border-purple-100">
+    // pb-safe: iOS 홈 인디케이터 영역까지 nav 배경색이 채워지도록
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-lg border-t border-purple-100 pb-safe">
       <div className="max-w-screen-lg mx-auto px-4">
         <div className="flex justify-around items-center h-16">
           {navItems.map((item) => {

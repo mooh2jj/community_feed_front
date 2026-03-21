@@ -239,14 +239,17 @@ function HomeContent() {
         </div>
       )}
 
-      {/* 글쓰기 방식 선택 모달 */}
+      {/* 글쓰기 방식 선택 모달
+           - z-60 : Navigation(z-50)보다 위에 렌더링
+           - 모바일: 하단 바텀시트(items-end) / 데스크탑: 중앙 모달(sm:items-center)
+      */}
       {showWriteModal && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-60 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
           onClick={() => setShowWriteModal(false)}
         >
           <div
-            className="w-full max-w-sm mx-4 mb-6 sm:mb-0 bg-white rounded-3xl shadow-2xl p-6 space-y-4"
+            className="w-full sm:max-w-sm sm:mx-4 sm:mb-0 mb-safe bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 모달 헤더 */}

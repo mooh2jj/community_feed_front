@@ -244,6 +244,27 @@
   animation: pulse-scale 2s ease-in-out infinite;
 }
 
+/**
+ * iOS Safe Area 유틸리티
+ * viewportFit="cover" 설정 시 홈 인디케이터 / 노치 영역을 피해
+ * 콘텐츠가 잘리지 않도록 보호하는 커스텀 클래스
+ *
+ * pb-safe     : 하단 safe area 만큼 padding-bottom 추가
+ * mb-safe     : 바텀시트 모달 카드용 — safe area 또는 최소 1.5rem 중 더 큰 값
+ * pb-safe-nav : 페이지 콘텐츠용 — Navigation 높이(5rem) + safe area
+ */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mb-safe {
+  margin-bottom: max(env(safe-area-inset-bottom, 0px), 1.5rem);
+}
+
+.pb-safe-nav {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+}
+
 /* 스크롤바 커스텀 */
 ::-webkit-scrollbar {
   width: 8px;
