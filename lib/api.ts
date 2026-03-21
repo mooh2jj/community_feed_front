@@ -17,6 +17,7 @@ import {
   ChatStreamCallbacks,
   FollowResponse,
   FollowListResponse,
+  PdfImportResponse,
 } from "./types";
 
 const API_BASE_URL =
@@ -609,6 +610,50 @@ export const followAPI = {
       size: size.toString(),
     });
     return fetchAPI(`/users/${encodeURIComponent(email)}/following?${params}`);
+  },
+};
+
+// ─── AI / PDF Import API ──────────────────────────────────────────────────────
+
+/**
+ * PDF 파일을 업로드하면 AI가 파싱 후 게시글로 자동 등록합니다.
+ * multipart/form-data 요청이므로 Content-Type 헤더를 브라우저에 위임합니다.
+ */
+export const aiAPI = {
+  /**
+   * POST /ai/pdf/import
+   * @param file - 업로드할 PDF 파일
+   * @param visibility - 게시글 공개 설정 (PUBLIC | PRIVATE | FOLLOWERS_ONLY)
+   * @param hashtags - 해시태그 열세히 (선택)
+   */
+  importPdf: async (
+    file: File,
+    visibility: string = "PUBLIC",
+    hashtags?: string[],
+  ): Promise<ApiResult<PdfImportResponse>> => {
+    const token = getAccessToken();
+    const params = new URLSearchParams({ visibility });
+    if (hashtags && hashtags.length > 0) {
+      // 해시태그는 하렬로 구분한 단일 파라미터로 전달
+      params.set("hashtags", hashtags.join(","));
+    }
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(
+      `${API_BASE_URL}/ai/pdf/import?${params}`,
+      {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      },
+    );
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(text || `PDF 업로드 실패 (${res.status})`);
+    }
+    return res.json() as Promise<ApiResult<PdfImportResponse>>;
   },
 };
 // ─── 챗봇 스트리밍 API ────────────────────────────────────────────────────────

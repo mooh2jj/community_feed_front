@@ -51,6 +51,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { uploadInlineImages } from "@/lib/imageUploadUtils";
+import { renderContent } from "@/lib/utils";
 
 /**
  * 게시물 상세 페이지
@@ -667,7 +668,7 @@ export default function PostDetailPage() {
                 <div
                   ref={contentRef}
                   className="prose prose-sm max-w-none text-gray-700"
-                  dangerouslySetInnerHTML={{ __html: post.content }}
+                  dangerouslySetInnerHTML={{ __html: renderContent(post.content) }}
                 />
 
                 {/* 해시태그 표시 */}

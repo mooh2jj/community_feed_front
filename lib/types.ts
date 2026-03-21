@@ -183,6 +183,13 @@ export interface AuthContextType {
 
 // ─── 챗봇 관련 타입 ─────────────────────────────────────────────────────────
 
+/** PDF 파일 import API 응답 */
+export interface PdfImportResponse {
+  postId: number;
+  charCount: number;
+  truncatedPreview: string;
+}
+
 /** 채팅 메시지 역할 */
 export type ChatRole = "user" | "ai";
 

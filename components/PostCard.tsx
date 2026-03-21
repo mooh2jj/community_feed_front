@@ -34,6 +34,7 @@ import { faHeart as faHeartRegular } from "@fortawesome/free-regular-svg-icons";
 import { Card } from "@/components/ui/card";
 import { PostResponse } from "@/lib/types";
 import { postAPI, storage, fileAPI } from "@/lib/api";
+import { renderContent } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -201,7 +202,7 @@ export default function PostCard({ post, onLikeChange }: PostCardProps) {
           <div
             ref={contentRef}
             className="prose prose-sm max-w-none text-sm text-gray-700 line-clamp-3 leading-relaxed flex-1"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{ __html: renderContent(post.content) }}
           />
 
           {/* 해시태그 */}
