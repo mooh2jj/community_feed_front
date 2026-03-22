@@ -75,11 +75,15 @@ export default function ChatbotWindow({ onClose }: Props) {
   const [isPending, setIsPending] = useState(false);
   // 이미지 분석 진행 중 (타이핑 인디케이터 공용)
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+  // 이미지 파일을 채팅 창에 드래그했을 때 true
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   // DOM 참조
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  // 드래그 카운터: 자식 요소 진입/이탈 시 dragleave 오탐 방지
+  const dragCountRef = useRef(0);
 
   // 고유 ID prefix (React 18 hydration 안전)
   const idPrefix = useId();
@@ -208,13 +212,15 @@ export default function ChatbotWindow({ onClose }: Props) {
 
   // ─── 이미지 업로드: 분석 → 키워드 메시지 ─────────────────────────────────
 
-  const handleImageUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      e.target.value = ""; // 동일 파일 재선택 허용
+  /**
+   * 이미지 파일을 받아 AI 분석 후 키워드 메시지를 추가합니다.
+   * 파일 input 변경 이벤트와 드래그앤드랍 두 경로에서 공통 사용합니다.
+   */
+  const processImageFile = useCallback(
+    async (file: File) => {
+      if (!file.type.startsWith("image/")) return;
 
-      // 사용자 메시지에 이미지 미리보기 표시
+      // 사용자 말풍선에 이미지 미리보기 표시
       const previewUrl = URL.createObjectURL(file);
       setMessages((prev) => [
         ...prev,
@@ -260,6 +266,50 @@ export default function ChatbotWindow({ onClose }: Props) {
       }
     },
     [genId],
+  );
+
+  /** 파일 input으로 선택한 이미지 처리 */
+  const handleImageUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      e.target.value = ""; // 동일 파일 재선택 허용
+      processImageFile(file);
+    },
+    [processImageFile],
+  );
+
+  // ─── 드래그앤드랍 이벤트 핸들러 ─────────────────────────────────────────
+
+  /** dragenter: 카운터 증가 → 첫 진입 시 오버레이 표시 */
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragCountRef.current++;
+    if (dragCountRef.current === 1) setIsDraggingOver(true);
+  }, []);
+
+  /** dragleave: 카운터 감소 → 완전히 빠져나갔을 때만 오버레이 제거 */
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    dragCountRef.current--;
+    if (dragCountRef.current === 0) setIsDraggingOver(false);
+  }, []);
+
+  /** dragover: 기본 동작 막아야 drop 이벤트가 발생함 */
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
+
+  /** drop: 파일 꺼내 processImageFile로 전달 */
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      dragCountRef.current = 0;
+      setIsDraggingOver(false);
+      const file = e.dataTransfer.files[0];
+      if (file) processImageFile(file);
+    },
+    [processImageFile],
   );
 
   /** 키워드 칩 클릭 → 해당 키워드로 게시글 자동 검색 */
@@ -339,7 +389,24 @@ export default function ChatbotWindow({ onClose }: Props) {
         </div>
 
         {/* ── 메시지 목록 ──────────────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-linear-to-b from-indigo-50/40 to-white/60">
+        <div
+          className="relative flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-linear-to-b from-indigo-50/40 to-white/60"
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
+          {/* 드래그 오버레이: 이미지를 올려놓는 동안 표시 */}
+          {isDraggingOver && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-none border-2 border-dashed border-indigo-400 bg-indigo-50/90 backdrop-blur-sm">
+              <ImageIcon size={36} className="text-indigo-400" />
+              <p className="text-sm font-semibold text-indigo-600">
+                이미지를 여기에 놓으세요
+              </p>
+              <p className="text-xs text-indigo-400">jpg, png, gif 등 지원</p>
+            </div>
+          )}
+
           {messages.map((message) => (
             <ChatMessageComponent
               key={message.id}
