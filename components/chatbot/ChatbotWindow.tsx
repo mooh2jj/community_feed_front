@@ -336,23 +336,64 @@ export default function ChatbotWindow({ onClose }: Props) {
 
   return (
     <>
-      {/* dot bounce 키프레임 (전역 style 삽입) */}
+      {/* 챗봇 전용 키프레임 */}
       <style>{`
         @keyframes chatbotDotBounce {
           0%, 60%, 100% { transform: translateY(0); }
           30%            { transform: translateY(-6px); }
         }
+        @keyframes chatbotIconFloat {
+          0%, 100% { transform: translateY(0); }
+          50%       { transform: translateY(-9px); }
+        }
+        @keyframes chatbotBorderPulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.35; }
+        }
       `}</style>
 
       <div
         className={cn(
-          "w-80 sm:w-88 h-125 flex flex-col",
+          "relative w-80 sm:w-88 h-125 flex flex-col",
           "bg-white/95 backdrop-blur-xl",
           "border border-purple-100 rounded-2xl",
           "shadow-2xl shadow-purple-200/40",
           "overflow-hidden",
         )}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
       >
+        {/* ── 드래그 오버레이: 전체 창 위에 표시 ──────────────────────────── */}
+        {isDraggingOver && (
+          <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-indigo-50/95 backdrop-blur-sm rounded-2xl">
+            {/* 점선 테두리 — 펄스 애니메이션 */}
+            <div
+              className="absolute inset-3 rounded-xl border-2 border-dashed border-indigo-400"
+              style={{
+                animation: "chatbotBorderPulse 1.5s ease-in-out infinite",
+              }}
+            />
+            {/* 아이콘 카드 — 플로트 애니메이션 */}
+            <div
+              style={{ animation: "chatbotIconFloat 1s ease-in-out infinite" }}
+            >
+              <div className="w-16 h-16 rounded-2xl bg-white border-2 border-indigo-200 flex items-center justify-center shadow-lg shadow-indigo-200/50">
+                <ImageIcon size={30} className="text-indigo-500" />
+              </div>
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-bold text-indigo-700">
+                이미지를 여기에 놓으세요
+              </p>
+              <p className="text-xs text-indigo-400">
+                JPG · PNG · GIF · WEBP 지원
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* ── 헤더 ─────────────────────────────────────────────────────────── */}
         <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-linear-to-r from-purple-600 to-indigo-600 text-white">
           {/* AI 아이콘 */}
@@ -389,24 +430,7 @@ export default function ChatbotWindow({ onClose }: Props) {
         </div>
 
         {/* ── 메시지 목록 ──────────────────────────────────────────────────── */}
-        <div
-          className="relative flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-linear-to-b from-indigo-50/40 to-white/60"
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-        >
-          {/* 드래그 오버레이: 이미지를 올려놓는 동안 표시 */}
-          {isDraggingOver && (
-            <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-none border-2 border-dashed border-indigo-400 bg-indigo-50/90 backdrop-blur-sm">
-              <ImageIcon size={36} className="text-indigo-400" />
-              <p className="text-sm font-semibold text-indigo-600">
-                이미지를 여기에 놓으세요
-              </p>
-              <p className="text-xs text-indigo-400">jpg, png, gif 등 지원</p>
-            </div>
-          )}
-
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-linear-to-b from-indigo-50/40 to-white/60">
           {messages.map((message) => (
             <ChatMessageComponent
               key={message.id}
@@ -434,21 +458,43 @@ export default function ChatbotWindow({ onClose }: Props) {
                 : "border-purple-200 focus-within:border-purple-500",
             )}
           >
-            {/* 이미지 업로드 버튼 */}
-            <button
-              type="button"
-              onClick={() => imageInputRef.current?.click()}
-              disabled={isStreaming || isAnalyzingImage}
-              className={cn(
-                "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
-                isStreaming || isAnalyzingImage
-                  ? "text-gray-300 cursor-not-allowed"
-                  : "text-gray-400 hover:text-indigo-500 hover:bg-indigo-50",
+            {/* 이미지 업로드 버튼 (툴팁 포함) */}
+            <div className="relative group shrink-0">
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={isStreaming || isAnalyzingImage}
+                className={cn(
+                  "w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200",
+                  isAnalyzingImage
+                    ? "text-indigo-500 bg-indigo-50 cursor-wait"
+                    : isStreaming
+                      ? "text-gray-300 cursor-not-allowed"
+                      : "text-indigo-400 hover:text-indigo-600 hover:bg-indigo-100 hover:scale-110",
+                )}
+                aria-label="이미지 업로드"
+              >
+                {/* 분석 중: 스피너 링 */}
+                {isAnalyzingImage ? (
+                  <span className="relative flex w-4 h-4 items-center justify-center">
+                    <span className="absolute inset-0 rounded-full border-2 border-indigo-200 border-t-indigo-500 animate-spin" />
+                    <ImageIcon size={9} />
+                  </span>
+                ) : (
+                  <ImageIcon size={15} />
+                )}
+              </button>
+
+              {/* 호버 툴팁 */}
+              {!isStreaming && !isAnalyzingImage && (
+                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                  <div className="relative bg-gray-800 text-white text-[10px] font-medium rounded-md px-2 py-1 whitespace-nowrap shadow-lg">
+                    이미지 업로드
+                    <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+                  </div>
+                </div>
               )}
-              aria-label="이미지 업로드"
-            >
-              <ImageIcon size={15} />
-            </button>
+            </div>
 
             <textarea
               ref={inputRef}
@@ -496,9 +542,18 @@ export default function ChatbotWindow({ onClose }: Props) {
             onChange={handleImageUpload}
           />
 
-          {/* 힌트 텍스트 */}
-          <p className="text-[10px] text-gray-400 text-center mt-1.5">
-            Shift+Enter 줄바꿈 · 📷 이미지로 키워드 검색 가능
+          {/* 힌트 텍스트: 상태에 따라 동적으로 변경 */}
+          <p
+            className={cn(
+              "text-[10px] text-center mt-1.5 transition-all duration-300",
+              isAnalyzingImage
+                ? "text-indigo-400 font-medium"
+                : "text-gray-400",
+            )}
+          >
+            {isAnalyzingImage
+              ? "🔍 이미지 키워드 분석 중..."
+              : "Shift+Enter 줄바꿈 · 📷 버튼 또는 드래그&드랍으로 이미지 업로드"}
           </p>
         </div>
       </div>
