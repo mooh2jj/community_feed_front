@@ -648,8 +648,18 @@ export const aiAPI = {
     });
 
     if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(text || `PDF 업로드 실패 (${res.status})`);
+      // 4xx/5xx 에러도 throw 대신 ApiResult 형태로 반환하여
+      // 호출부에서 errorCode 분기 처리가 가능하도록 함
+      try {
+        const errBody = await res.json();
+        return errBody as ApiResult<PdfImportResponse>;
+      } catch {
+        return {
+          success: false,
+          message: `PDF 업로드 실패 (${res.status})`,
+          data: null as unknown as PdfImportResponse,
+        };
+      }
     }
     return res.json() as Promise<ApiResult<PdfImportResponse>>;
   },

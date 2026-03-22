@@ -91,14 +91,10 @@ function HomeContent() {
         // 피드 컴포넌트를 언마운트→리마운트시켜 최신 목록 재조회
         setFeedKey((k) => k + 1);
       } else if (result.errorCode === "PDF_CONTENT_TOO_LONG") {
-        // 추출 텍스트 5000자 초과 시 사용자 친화적 메시지 표시
-        toast.error(
-          "📄 PDF 내용이 너무 깁니다!\n5,000자 이하의 PDF를 업로드해 주세요.",
-          {
-            description: result.message, // "현재: N자" 정보를 부제로 표시
-            duration: 6000,
-          },
-        );
+        // 서버에서 내려온 message 값만 그대로 표시
+        toast.error(result.message ?? "PDF 내용이 너무 깁니다", {
+          duration: 6000,
+        });
       } else {
         toast.error(result.message ?? "PDF 등록에 실패했습니다");
       }
