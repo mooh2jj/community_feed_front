@@ -190,6 +190,11 @@ export interface PdfImportResponse {
   truncatedPreview: string;
 }
 
+/** 이미지 분석 API 응답 */
+export interface ImageAnalysisResponse {
+  keywords: string[];
+}
+
 /** 채팅 메시지 역할 */
 export type ChatRole = "user" | "ai";
 
@@ -205,6 +210,10 @@ export interface ChatMessage {
   sourcePostIds?: number[];
   /** 스트리밍 진행 중 여부 */
   isStreaming?: boolean;
+  /** 이미지 분석 요청 시 미리보기 Object URL (사용자 메시지) */
+  imagePreviewUrl?: string;
+  /** 이미지 분석 결과 키워드 목록 (AI 메시지) */
+  imageKeywords?: string[];
 }
 
 /** 챗봇 스트리밍 이벤트 콜백 */

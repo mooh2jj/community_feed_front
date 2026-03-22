@@ -18,6 +18,7 @@ import {
   FollowResponse,
   FollowListResponse,
   PdfImportResponse,
+  ImageAnalysisResponse,
 } from "./types";
 
 const API_BASE_URL =
@@ -651,6 +652,31 @@ export const aiAPI = {
       throw new Error(text || `PDF 업로드 실패 (${res.status})`);
     }
     return res.json() as Promise<ApiResult<PdfImportResponse>>;
+  },
+
+  /**
+   * POST /ai/image/analysis
+   * 이미지를 업로드하면 AI가 분석하여 키워드 목록을 반환합니다.
+   * @param file - 분석할 이미지 파일 (jpeg, png 등)
+   */
+  analyzeImage: async (
+    file: File,
+  ): Promise<ApiResult<ImageAnalysisResponse>> => {
+    const token = getAccessToken();
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${API_BASE_URL}/ai/image/analysis`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(text || `이미지 분석 실패 (${res.status})`);
+    }
+    return res.json() as Promise<ApiResult<ImageAnalysisResponse>>;
   },
 };
 // ─── 챗봇 스트리밍 API ────────────────────────────────────────────────────────

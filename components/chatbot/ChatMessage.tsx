@@ -18,6 +18,8 @@ import type { ChatMessage as ChatMessageType } from "@/lib/types";
 
 interface Props {
   message: ChatMessageType;
+  /** 이미지 분석 키워드 선택 시 호출 → 해당 키워드로 게시글 검색 */
+  onKeywordSelect?: (keyword: string) => void;
 }
 
 // ─── ISO 날짜 포매터 ───────────────────────────────────────────────────────────
@@ -79,7 +81,7 @@ function renderInlineMarkdown(text: string): React.ReactNode {
 
 // ─── 컴포넌트 ─────────────────────────────────────────────────────────────────
 
-export default function ChatMessage({ message }: Props) {
+export default function ChatMessage({ message, onKeywordSelect }: Props) {
   const isUser = message.role === "user";
 
   return (
@@ -114,6 +116,15 @@ export default function ChatMessage({ message }: Props) {
                 "bg-white border border-purple-100 text-gray-800 rounded-2xl rounded-bl-sm shadow-sm",
           )}
         >
+          {/* 이미지 미리보기 (이미지 분석 요청 메시지) */}
+          {message.imagePreviewUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={message.imagePreviewUrl}
+              alt="업로드된 이미지"
+              className="w-28 h-28 object-cover rounded-xl mb-2 shadow"
+            />
+          )}
           {/* 마크다운 렌더링 + pre-wrap으로 줄바꿈 보존 */}
           <p className="whitespace-pre-wrap">
             {renderInlineMarkdown(message.content)}
@@ -143,6 +154,23 @@ export default function ChatMessage({ message }: Props) {
                 >
                   #{id}
                 </Link>
+              ))}
+            </div>
+          )}
+
+        {/* 이미지 분석 키워드 칩 — 클릭 시 해당 키워드로 게시글 자동 검색 */}
+        {!message.isStreaming &&
+          message.imageKeywords &&
+          message.imageKeywords.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {message.imageKeywords.map((keyword) => (
+                <button
+                  key={keyword}
+                  onClick={() => onKeywordSelect?.(keyword)}
+                  className="px-2.5 py-1 text-xs font-medium bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-full transition-colors border border-indigo-200 active:scale-95"
+                >
+                  #{keyword}
+                </button>
               ))}
             </div>
           )}

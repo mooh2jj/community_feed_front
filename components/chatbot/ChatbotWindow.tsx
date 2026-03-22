@@ -12,9 +12,9 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback, useId } from "react";
-import { X, Send, Sparkles } from "lucide-react";
+import { X, Send, Sparkles, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { streamChat } from "@/lib/api";
+import { streamChat, aiAPI } from "@/lib/api";
 import type { ChatMessage } from "@/lib/types";
 import ChatMessageComponent from "./ChatMessage";
 
@@ -73,10 +73,13 @@ export default function ChatbotWindow({ onClose }: Props) {
   const [isStreaming, setIsStreaming] = useState(false);
   // 스트리밍 시작됐지만 첫 토큰 전 (타이핑 인디케이터 표시 용도)
   const [isPending, setIsPending] = useState(false);
+  // 이미지 분석 진행 중 (타이핑 인디케이터 공용)
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
 
   // DOM 참조
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   // 고유 ID prefix (React 18 hydration 안전)
   const idPrefix = useId();
@@ -106,97 +109,166 @@ export default function ChatbotWindow({ onClose }: Props) {
 
   // ─── 메시지 전송 핸들러 ────────────────────────────────────────────────────
 
-  const handleSend = useCallback(async () => {
-    const query = input.trim();
-    if (!query || isStreaming) return;
+  const handleSend = useCallback(
+    async (overrideQuery?: string) => {
+      const query = (overrideQuery ?? input).trim();
+      if (!query || isStreaming) return;
 
-    setInput("");
-    setIsStreaming(true);
-    setIsPending(true); // 타이핑 인디케이터 표시
+      if (!overrideQuery) setInput("");
+      setIsStreaming(true);
+      setIsPending(true); // 타이핑 인디케이터 표시
 
-    // 1. 사용자 메시지 즉시 추가
-    const userMsg: ChatMessage = {
-      id: genId(),
-      role: "user",
-      content: query,
-    };
+      // 1. 사용자 메시지 즉시 추가
+      const userMsg: ChatMessage = {
+        id: genId(),
+        role: "user",
+        content: query,
+      };
 
-    // 2. AI 응답 메시지 (내용 없이 스트리밍 중 표시)
-    const aiMsgId = genId();
-    const aiMsg: ChatMessage = {
-      id: aiMsgId,
-      role: "ai",
-      content: "",
-      sourcePostIds: [],
-      isStreaming: true,
-    };
+      // 2. AI 응답 메시지 (내용 없이 스트리밍 중 표시)
+      const aiMsgId = genId();
+      const aiMsg: ChatMessage = {
+        id: aiMsgId,
+        role: "ai",
+        content: "",
+        sourcePostIds: [],
+        isStreaming: true,
+      };
 
-    setMessages((prev) => [...prev, userMsg]);
+      setMessages((prev) => [...prev, userMsg]);
 
-    // 스트리밍 API 호출
-    // aiMsg, aiMsgId 는 핸들러 내부에서 생성된 로컬 변수 → 클로저로 정상 캡처됨
-    await streamChat(query, 5, {
-      /** metadata 이벤트: 출처 게시글 ID 수신 → AI 메시지 등록 */
-      onMetadata: (sourcePostIds) => {
-        setIsPending(false); // 타이핑 인디케이터 제거 후 메시지 버블 등록
-        setMessages((prev) => [...prev, { ...aiMsg, sourcePostIds }]);
-      },
+      // 스트리밍 API 호출
+      // aiMsg, aiMsgId 는 핸들러 내부에서 생성된 로컬 변수 → 클로저로 정상 캡처됨
+      await streamChat(query, 5, {
+        /** metadata 이벤트: 출처 게시글 ID 수신 → AI 메시지 등록 */
+        onMetadata: (sourcePostIds) => {
+          setIsPending(false); // 타이핑 인디케이터 제거 후 메시지 버블 등록
+          setMessages((prev) => [...prev, { ...aiMsg, sourcePostIds }]);
+        },
 
-      /** token 이벤트: 토큰 단위로 내용 누적 */
-      onToken: (token) => {
-        setIsPending(false);
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === aiMsgId ? { ...msg, content: msg.content + token } : msg,
-          ),
-        );
-      },
-
-      /** done 이벤트: 스트리밍 완료 → 커서 제거 */
-      onDone: () => {
-        setIsPending(false);
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg,
-          ),
-        );
-        setIsStreaming(false);
-      },
-
-      /** 오류 처리: 오류 메시지로 대체 */
-      onError: (error) => {
-        console.error("[ChatbotWindow] 스트리밍 오류:", error);
-        setIsPending(false);
-        setMessages((prev) => {
-          // AI 메시지가 이미 추가된 경우 내용을 오류 메시지로 교체
-          const hasAiMsg = prev.some((msg) => msg.id === aiMsgId);
-          if (hasAiMsg) {
-            return prev.map((msg) =>
+        /** token 이벤트: 토큰 단위로 내용 누적 */
+        onToken: (token) => {
+          setIsPending(false);
+          setMessages((prev) =>
+            prev.map((msg) =>
               msg.id === aiMsgId
-                ? {
-                    ...msg,
-                    content:
-                      "죄송해요, 응답 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
-                    isStreaming: false,
-                  }
+                ? { ...msg, content: msg.content + token }
                 : msg,
-            );
-          }
-          // 아직 AI 메시지가 없으면 새로 추가
-          return [
-            ...prev,
-            {
-              ...aiMsg,
-              content:
-                "죄송해요, 응답 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
-              isStreaming: false,
-            },
-          ];
-        });
-        setIsStreaming(false);
-      },
-    });
-  }, [input, isStreaming, genId]); // aiMsg/aiMsgId 는 handleSend 내부 로컬 변수
+            ),
+          );
+        },
+
+        /** done 이벤트: 스트리밍 완료 → 커서 제거 */
+        onDone: () => {
+          setIsPending(false);
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg,
+            ),
+          );
+          setIsStreaming(false);
+        },
+
+        /** 오류 처리: 오류 메시지로 대체 */
+        onError: (error) => {
+          console.error("[ChatbotWindow] 스트리밍 오류:", error);
+          setIsPending(false);
+          setMessages((prev) => {
+            // AI 메시지가 이미 추가된 경우 내용을 오류 메시지로 교체
+            const hasAiMsg = prev.some((msg) => msg.id === aiMsgId);
+            if (hasAiMsg) {
+              return prev.map((msg) =>
+                msg.id === aiMsgId
+                  ? {
+                      ...msg,
+                      content:
+                        "죄송해요, 응답 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
+                      isStreaming: false,
+                    }
+                  : msg,
+              );
+            }
+            // 아직 AI 메시지가 없으면 새로 추가
+            return [
+              ...prev,
+              {
+                ...aiMsg,
+                content:
+                  "죄송해요, 응답 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
+                isStreaming: false,
+              },
+            ];
+          });
+          setIsStreaming(false);
+        },
+      });
+    },
+    [input, isStreaming, genId],
+  ); // aiMsg/aiMsgId 는 handleSend 내부 로컬 변수
+
+  // ─── 이미지 업로드: 분석 → 키워드 메시지 ─────────────────────────────────
+
+  const handleImageUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      e.target.value = ""; // 동일 파일 재선택 허용
+
+      // 사용자 메시지에 이미지 미리보기 표시
+      const previewUrl = URL.createObjectURL(file);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: genId(),
+          role: "user" as const,
+          content: "이미지를 분석해주세요",
+          imagePreviewUrl: previewUrl,
+        },
+      ]);
+      setIsAnalyzingImage(true);
+
+      try {
+        const result = await aiAPI.analyzeImage(file);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: genId(),
+            role: "ai" as const,
+            content:
+              result.success && result.data.keywords.length > 0
+                ? "이미지를 분석했어요! 키워드를 클릭하면\n관련 게시글을 바로 찾아드릴게요 🔍"
+                : "이미지에서 키워드를 찾지 못했어요. 다른 이미지를 시도해 보세요.",
+            sourcePostIds: [],
+            imageKeywords:
+              result.success && result.data.keywords.length > 0
+                ? result.data.keywords
+                : undefined,
+          },
+        ]);
+      } catch {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: genId(),
+            role: "ai" as const,
+            content: "이미지 분석 중 오류가 발생했어요. 다시 시도해 주세요.",
+            sourcePostIds: [],
+          },
+        ]);
+      } finally {
+        setIsAnalyzingImage(false);
+      }
+    },
+    [genId],
+  );
+
+  /** 키워드 칩 클릭 → 해당 키워드로 게시글 자동 검색 */
+  const handleKeywordSelect = useCallback(
+    (keyword: string) => {
+      handleSend(`${keyword} 관련 게시글 찾아줘`);
+    },
+    [handleSend],
+  );
 
   // ─── 키보드 이벤트: Enter 전송 / Shift+Enter 줄바꿈 ──────────────────────
 
@@ -269,11 +341,15 @@ export default function ChatbotWindow({ onClose }: Props) {
         {/* ── 메시지 목록 ──────────────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-linear-to-b from-indigo-50/40 to-white/60">
           {messages.map((message) => (
-            <ChatMessageComponent key={message.id} message={message} />
+            <ChatMessageComponent
+              key={message.id}
+              message={message}
+              onKeywordSelect={handleKeywordSelect}
+            />
           ))}
 
-          {/* 타이핑 인디케이터: metadata 도착 전 */}
-          {isPending && <TypingIndicator />}
+          {/* 타이핑 인디케이터: 스트리밍 대기 또는 이미지 분석 중 */}
+          {(isPending || isAnalyzingImage) && <TypingIndicator />}
 
           {/* 자동 스크롤 앵커 */}
           <div ref={messagesEndRef} />
@@ -291,6 +367,22 @@ export default function ChatbotWindow({ onClose }: Props) {
                 : "border-purple-200 focus-within:border-purple-500",
             )}
           >
+            {/* 이미지 업로드 버튼 */}
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={isStreaming || isAnalyzingImage}
+              className={cn(
+                "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
+                isStreaming || isAnalyzingImage
+                  ? "text-gray-300 cursor-not-allowed"
+                  : "text-gray-400 hover:text-indigo-500 hover:bg-indigo-50",
+              )}
+              aria-label="이미지 업로드"
+            >
+              <ImageIcon size={15} />
+            </button>
+
             <textarea
               ref={inputRef}
               value={input}
@@ -313,7 +405,7 @@ export default function ChatbotWindow({ onClose }: Props) {
 
             {/* 전송 버튼 */}
             <button
-              onClick={handleSend}
+              onClick={() => handleSend()}
               disabled={!input.trim() || isStreaming}
               className={cn(
                 "shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
@@ -328,9 +420,18 @@ export default function ChatbotWindow({ onClose }: Props) {
             </button>
           </div>
 
+          {/* 숨겨진 이미지 파일 입력 */}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+
           {/* 힌트 텍스트 */}
           <p className="text-[10px] text-gray-400 text-center mt-1.5">
-            Shift+Enter 줄바꿈 · 커뮤니티 게시글 기반 답변
+            Shift+Enter 줄바꿈 · 📷 이미지로 키워드 검색 가능
           </p>
         </div>
       </div>
