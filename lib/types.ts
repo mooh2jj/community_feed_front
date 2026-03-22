@@ -6,6 +6,8 @@
 export interface ApiResult<T> {
   success: boolean;
   message?: string;
+  /** 마코드 오류 코드 (ex. PDF_CONTENT_TOO_LONG) */
+  errorCode?: string;
   data: T;
 }
 
