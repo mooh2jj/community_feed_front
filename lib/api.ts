@@ -19,6 +19,7 @@ import {
   FollowListResponse,
   PdfImportResponse,
   ImageAnalysisResponse,
+  WeeklyPopularPost,
 } from "./types";
 
 const API_BASE_URL =
@@ -352,6 +353,13 @@ export const postAPI = {
   // 인기 태그 목록 조회 (popular=true, 최대 limit 개)
   getPopularTags: async (limit: number = 10): Promise<ApiResult<string[]>> => {
     return fetchAPI(`/posts/tags?popular=true&limit=${limit}`);
+  },
+
+  // 주간 인기글 목록 조회 (최대 limit 개)
+  getWeeklyPopular: async (
+    limit: number = 5,
+  ): Promise<ApiResult<WeeklyPopularPost[]>> => {
+    return fetchAPI(`/posts/popular/weekly?limit=${limit}`);
   },
 };
 

@@ -110,6 +110,15 @@ export interface PaginationResponse<T> {
   current: number; // 현재 페이지 번호
 }
 
+// 주간 인기글 단일 항목
+export interface WeeklyPopularPost {
+  rank: number;
+  content: string;
+  authorName: string;
+  authorProfileImageUrl: string | null;
+  createdAt: string;
+}
+
 // 게시물 작성 요청
 export interface PostCreateRequest {
   content: string;
