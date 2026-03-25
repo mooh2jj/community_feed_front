@@ -144,10 +144,12 @@ async function fetchAPI<T>(
     const errBody = await response
       .json()
       .catch(() => ({ message: "", errorCode: "" }));
+    const errErrorCode: string = errBody.errorCode ?? "";
     const errMessage: string = errBody.message ?? "";
 
-    // "Expired" 메시지일 때만 refresh 시도 (만료된 토큰)
-    if (errMessage === "Expired") {
+    // ACCESS_TOKEN_ERROR(errorCode) 또는 "Expired"(message) 일 때 refresh 시도
+    // 백엔드가 만료된 액세스 토큰에 errorCode: "ACCESS_TOKEN_ERROR" 를 반환함
+    if (errErrorCode === "ACCESS_TOKEN_ERROR" || errMessage === "Expired") {
       // 이미 갱신 중이면 큐에 대기
       if (isRefreshing) {
         const newToken = await new Promise<string>((resolve, reject) => {
