@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import Navigation from "@/components/Navigation";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import ChatbotFAB from "@/components/chatbot/ChatbotFAB";
 
 const pretendard = localFont({
@@ -59,12 +60,14 @@ export default function RootLayout({
         className={`${pretendard.variable} antialiased min-h-screen bg-[#fafafa]`}
       >
         <AuthProvider>
-          {/* pb-safe-nav: 네비게이션 높이(5rem) + iOS safe area 만큼 하단 여백 확보 */}
-          <div className="pb-safe-nav">{children}</div>
-          {/* 로그인 이후 모든 페이지에 표시되는 AI 챗봇 FAB */}
-          <ChatbotFAB />
-          <Navigation />
-          <Toaster position="top-center" richColors />
+          <NotificationProvider>
+            {/* pb-safe-nav: 네비게이션 높이(5rem) + iOS safe area 만큼 하단 여백 확보 */}
+            <div className="pb-safe-nav">{children}</div>
+            {/* 로그인 이후 모든 페이지에 표시되는 AI 챗봇 FAB */}
+            <ChatbotFAB />
+            <Navigation />
+            <Toaster position="top-center" richColors />
+          </NotificationProvider>
         </AuthProvider>
       </body>
     </html>

@@ -20,6 +20,8 @@ import {
   PdfImportResponse,
   ImageAnalysisResponse,
   WeeklyPopularPost,
+  NotificationResponse,
+  NotificationSSECallbacks,
 } from "./types";
 
 const API_BASE_URL =
@@ -870,3 +872,59 @@ export const storage = {
     return storage.getMyPostIds().has(postId);
   },
 };
+
+/**
+ * 알림 관련 REST API
+ */
+export const notificationAPI = {
+  /** 알림 전체 목록 조회 */
+  getAll: (): Promise<ApiResult<NotificationResponse[]>> =>
+    fetchAPI("/notifications"),
+
+  /** 미읽음 알림 개수 조회 */
+  getUnreadCount: (): Promise<ApiResult<number>> =>
+    fetchAPI("/notifications/unread-count"),
+
+  /** 전체 알림 읽음 처리 */
+  markAllRead: (): Promise<ApiResult<null>> =>
+    fetchAPI("/notifications/read-all", { method: "PATCH" }),
+
+  /** 특정 알림 읽음 처리 (PATCH /notifications/{id}/read) */
+  markRead: (id: number): Promise<ApiResult<null>> =>
+    fetchAPI(`/notifications/${id}/read`, { method: "PATCH" }),
+};
+
+/**
+ * SSE 실시간 알림 구독
+ * - EventSource는 커스텀 헤더를 지원하지 않으므로 token을 query string으로 전달
+ * - 반환된 EventSource를 close()로 구독 해제
+ */
+export function subscribeNotifications(
+  token: string,
+  callbacks: NotificationSSECallbacks,
+): EventSource {
+  const url = `${API_BASE_URL}/notifications/subscribe?token=${encodeURIComponent(token)}`;
+  const es = new EventSource(url);
+
+  // 서버 연결 확인 이벤트
+  es.addEventListener("connected", () => {
+    callbacks.onConnected?.();
+  });
+
+  // 실시간 알림 수신 이벤트
+  es.addEventListener("notification", (e: MessageEvent) => {
+    try {
+      const notification: NotificationResponse = JSON.parse(e.data);
+      callbacks.onNotification(notification);
+    } catch {
+      console.error("[SSE] 알림 파싱 실패:", e.data);
+    }
+  });
+
+  // 연결 오류 처리
+  es.onerror = (e) => {
+    callbacks.onError?.(e);
+  };
+
+  return es;
+}

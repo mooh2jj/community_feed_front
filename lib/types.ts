@@ -119,6 +119,28 @@ export interface WeeklyPopularPost {
   createdAt: string;
 }
 
+// 알림 타입
+export type NotificationType = "LIKE" | "COMMENT" | "FOLLOW";
+
+// 알림 단일 항목
+export interface NotificationResponse {
+  id: number;
+  actorEmail: string;
+  actorName: string;
+  type: NotificationType;
+  /** LIKE: postId | COMMENT: commentId | FOLLOW: null */
+  referenceId: number | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+// SSE 알림 구독 콜백
+export interface NotificationSSECallbacks {
+  onConnected?: () => void;
+  onNotification: (notification: NotificationResponse) => void;
+  onError?: (e: Event) => void;
+}
+
 // 게시물 작성 요청
 export interface PostCreateRequest {
   content: string;
