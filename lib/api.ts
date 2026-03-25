@@ -348,6 +348,11 @@ export const postAPI = {
   getTags: async (): Promise<ApiResult<string[]>> => {
     return fetchAPI(`/posts/tags`);
   },
+
+  // 인기 태그 목록 조회 (popular=true, 최대 limit 개)
+  getPopularTags: async (limit: number = 10): Promise<ApiResult<string[]>> => {
+    return fetchAPI(`/posts/tags?popular=true&limit=${limit}`);
+  },
 };
 
 /**
