@@ -27,7 +27,7 @@ const WELCOME_MESSAGE: ChatMessage = {
   content:
     "안녕하세요! 저는 StudyMate AI 어시스턴트예요 ✨\n\n" +
     "이 커뮤니티의 게시글을 기반으로 궁금한 점을 답해드릴게요.\n" +
-    "어떤 주제가 궁금하신가요?",
+    "어떤 게시글을 찾으시나요?",
   sourcePostIds: [],
 };
 
