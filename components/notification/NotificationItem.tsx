@@ -19,7 +19,12 @@ const NOTIFICATION_CONFIG: Record<
     iconColor: string;
     iconBg: string;
     getMessage: (actorName: string) => string;
-    getHref: (referenceId: number | null, actorEmail: string) => string;
+    /** referenceId: LIKE=postId, COMMENT=commentId, FOLLOW=null */
+    getHref: (
+      referenceId: number | null,
+      actorEmail: string,
+      postId?: number | null,
+    ) => string;
   }
 > = {
   LIKE: {
@@ -35,8 +40,13 @@ const NOTIFICATION_CONFIG: Record<
     iconColor: "text-blue-500",
     iconBg: "bg-blue-50",
     getMessage: (actorName) => `${actorName}님이 댓글을 달았습니다`,
-    // referenceId = commentId이므로 현재는 홈으로 이동 (백엔드 postId 보강 전)
-    getHref: () => "/",
+    // postId: 게시글 ID, referenceId: commentId → 해당 댓글 앵커로 이동
+    getHref: (referenceId, _, postId) => {
+      if (postId != null && referenceId != null)
+        return `/post/${postId}#comment-${referenceId}`;
+      if (postId != null) return `/post/${postId}#comments-section`;
+      return "/";
+    },
   },
   FOLLOW: {
     icon: faUserPlus,
@@ -88,6 +98,7 @@ export default function NotificationItem({
     const href = config.getHref(
       notification.referenceId,
       notification.actorEmail,
+      notification.postId,
     );
     onClose();
     router.push(href);

@@ -879,9 +879,14 @@ export const storage = {
  * 알림 관련 REST API
  */
 export const notificationAPI = {
-  /** 알림 전체 목록 조회 */
-  getAll: (): Promise<ApiResult<NotificationResponse[]>> =>
-    fetchAPI("/notifications"),
+  /**
+   * 알림 목록 조회
+   * @param isRead - true: 읽은 알림만 | false: 미읽음 알림만 | undefined: 전체
+   */
+  getAll: (isRead?: boolean): Promise<ApiResult<NotificationResponse[]>> => {
+    const params = isRead !== undefined ? `?isRead=${isRead}` : "";
+    return fetchAPI(`/notifications${params}`);
+  },
 
   /** 미읽음 알림 개수 조회 */
   getUnreadCount: (): Promise<ApiResult<number>> =>

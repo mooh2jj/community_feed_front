@@ -60,11 +60,12 @@ export function NotificationProvider({
    * 알림 목록 전체를 서버에서 가져와 상태 업데이트
    * 드롭다운을 열 때마다 호출
    */
+  // 드롭다운 열릴 때 미읽음 알림만 조회 (isRead=false)
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
     setIsLoading(true);
     try {
-      const res = await notificationAPI.getAll();
+      const res = await notificationAPI.getAll(false);
       setNotifications(res.data);
     } catch (e) {
       console.error("[Notification] 목록 조회 실패:", e);

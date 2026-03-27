@@ -128,6 +128,28 @@ export default function PostDetailPage() {
     }
   }, [post?.content, isEditing]);
 
+  // URL 해시(#comment-{id})가 있으면 댓글 로드 후 해당 위치로 자동 스크롤
+  useEffect(() => {
+    if (comments.length === 0) return;
+    const hash = window.location.hash; // ex) "#comment-42"
+    if (!hash) return;
+
+    // DOM 렌더링 완료 후 스크롤 (requestAnimationFrame으로 한 프레임 대기)
+    const raf = requestAnimationFrame(() => {
+      const el = document.querySelector(hash);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      // 2초간 보라색 링 하이라이트 후 제거
+      el.classList.add("ring-2", "ring-purple-400", "ring-offset-2");
+      setTimeout(
+        () => el.classList.remove("ring-2", "ring-purple-400", "ring-offset-2"),
+        2000,
+      );
+    });
+
+    return () => cancelAnimationFrame(raf);
+  }, [comments]);
+
   const loadPost = async () => {
     try {
       const result = await postAPI.getPost(postId, user?.email);
@@ -737,7 +759,7 @@ export default function PostDetailPage() {
             </form>
 
             {/* 댓글 목록 */}
-            <div className="space-y-4">
+            <div id="comments-section" className="space-y-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-bold text-gray-900">
                   💬 댓글 {comments.length}개
@@ -758,7 +780,8 @@ export default function PostDetailPage() {
                   return (
                     <div
                       key={comment.id}
-                      className="flex gap-3 p-4 bg-purple-50/50 rounded-2xl"
+                      id={`comment-${comment.id}`}
+                      className="flex gap-3 p-4 bg-purple-50/50 rounded-2xl transition-all duration-300"
                     >
                       <div className="relative w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-300 flex-shrink-0">
                         <Image

@@ -130,6 +130,8 @@ export interface NotificationResponse {
   type: NotificationType;
   /** LIKE: postId | COMMENT: commentId | FOLLOW: null */
   referenceId: number | null;
+  /** COMMENT 알림에서 댓글이 속한 게시글 ID (백엔드 postId 컬럼) */
+  postId?: number | null;
   isRead: boolean;
   createdAt: string;
 }
