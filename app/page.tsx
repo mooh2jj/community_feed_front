@@ -109,8 +109,6 @@ function HomeContent() {
                 <p className="text-xs text-gray-500">스터디 인증 커뮤니티</p>
               </div>
             </div>
-
-
           </div>
         </div>
       </header>

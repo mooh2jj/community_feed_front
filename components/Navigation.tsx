@@ -78,9 +78,10 @@ export default function Navigation() {
             bg-white/90 backdrop-blur-sm
             border transition-all duration-200
             shadow-md shadow-black/8
-            ${isOpen
-              ? "border-purple-300 bg-purple-50 shadow-purple-200/60"
-              : "border-gray-200 hover:border-purple-300 hover:bg-purple-50 hover:shadow-purple-200/40"
+            ${
+              isOpen
+                ? "border-purple-300 bg-purple-50 shadow-purple-200/60"
+                : "border-gray-200 hover:border-purple-300 hover:bg-purple-50 hover:shadow-purple-200/40"
             }
           `}
         >

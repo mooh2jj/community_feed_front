@@ -58,7 +58,11 @@ const recentSearchStorage = {
 
 type SortOption = "latest" | "popular" | "views";
 
-const SORT_OPTIONS: { value: SortOption; label: string; icon: typeof faClock }[] = [
+const SORT_OPTIONS: {
+  value: SortOption;
+  label: string;
+  icon: typeof faClock;
+}[] = [
   { value: "latest", label: "최신순", icon: faClock },
   { value: "popular", label: "인기순", icon: faFire },
   { value: "views", label: "조회순", icon: faEye },
@@ -326,7 +330,6 @@ export default function PostFeed({
     <div>
       {/* ── 검색 + 툴바 영역 ── */}
       <div className="mb-6">
-
         {/* Row 1: 검색 바 */}
         <div className="flex items-center gap-3 mb-3">
           <div ref={searchWrapperRef} className="relative flex-1">
@@ -418,14 +421,17 @@ export default function PostFeed({
                   onClick={() => onSortChange?.(option.value)}
                   className={`
                     flex items-center text-sm transition-colors duration-150
-                    ${isActive
-                      ? "text-purple-600 font-bold"
-                      : "text-gray-400 hover:text-gray-700 font-medium"
+                    ${
+                      isActive
+                        ? "text-purple-600 font-bold"
+                        : "text-gray-400 hover:text-gray-700 font-medium"
                     }
                   `}
                 >
                   {idx > 0 && (
-                    <span className="mx-2 text-gray-200 font-normal select-none">·</span>
+                    <span className="mx-2 text-gray-200 font-normal select-none">
+                      ·
+                    </span>
                   )}
                   {isActive && (
                     <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mr-1.5 shrink-0 inline-block" />
@@ -438,7 +444,10 @@ export default function PostFeed({
             {/* 초기화 버튼 */}
             {(sortBy !== "latest" || searchKeyword) && onResetSort && (
               <button
-                onClick={() => { onResetSort(); handleClearSearch(); }}
+                onClick={() => {
+                  onResetSort();
+                  handleClearSearch();
+                }}
                 className="ml-3 flex items-center gap-1 text-xs text-gray-400 hover:text-purple-600 transition-colors"
               >
                 <FontAwesomeIcon icon={faTimes} className="text-[10px]" />
