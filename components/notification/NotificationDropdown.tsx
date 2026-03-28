@@ -43,9 +43,9 @@ export default function NotificationDropdown() {
   return (
     <div
       ref={panelRef}
-      // bottom-16: Navigation h-16 위에 위치 / z-60: Navigation(z-50) 위에 표시
+      // top-[60px]: 상단 벨 버튼(top-3 + h-10 = 52px) 바로 아래 / z-60: Navigation(z-50) 위에 표시
       className="
-        fixed bottom-16 right-2 z-60
+        fixed top-15 right-2 z-60
         w-80 max-h-[70vh] flex flex-col
         bg-white rounded-2xl shadow-2xl shadow-black/10
         border border-gray-100 overflow-hidden

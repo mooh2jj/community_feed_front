@@ -5,20 +5,13 @@ import { useSearchParams, useRouter } from "next/navigation";
 import PostFeed from "@/components/PostFeed";
 import PopularTagsSidebar from "@/components/PopularTagsSidebar";
 import WeeklyPopularSidebar from "@/components/WeeklyPopularSidebar";
-import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faClock,
-  faFire,
-  faEye,
   faStar,
-  faGrip,
-  faList,
   faPen,
   faFile,
   faSpinner,
   faXmark,
-  type IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import PostCardSkeleton from "@/components/PostCardSkeleton";
 import { aiAPI } from "@/lib/api";
@@ -26,16 +19,6 @@ import { toast } from "sonner";
 
 type SortOption = "latest" | "popular" | "views";
 export type ViewMode = "grid" | "list";
-
-const sortOptions: {
-  value: SortOption;
-  label: string;
-  icon: IconDefinition;
-}[] = [
-  { value: "latest", label: "최신순", icon: faClock },
-  { value: "popular", label: "인기순", icon: faFire },
-  { value: "views", label: "조회순", icon: faEye },
-];
 
 /**
  * useSearchParams를 사용하는 내부 컴포넌트
@@ -127,50 +110,7 @@ function HomeContent() {
               </div>
             </div>
 
-            {/* 뷰 모드 토글 + 정렬 버튼 */}
-            <div className="flex items-center gap-1.5 flex-wrap justify-end">
-              {/* 뷰 모드 토글 */}
-              <div className="flex items-center border-2 border-purple-200 rounded-lg overflow-hidden mr-1">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-1.5 transition-colors ${
-                    viewMode === "grid"
-                      ? "bg-purple-600 text-white"
-                      : "text-gray-400 hover:text-purple-600 hover:bg-purple-50"
-                  }`}
-                  title="그리드 뷰"
-                >
-                  <FontAwesomeIcon icon={faGrip} className="text-sm" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-1.5 transition-colors ${
-                    viewMode === "list"
-                      ? "bg-purple-600 text-white"
-                      : "text-gray-400 hover:text-purple-600 hover:bg-purple-50"
-                  }`}
-                  title="리스트 뷰"
-                >
-                  <FontAwesomeIcon icon={faList} className="text-sm" />
-                </button>
-              </div>
-              {sortOptions.map((option) => (
-                <Button
-                  key={option.value}
-                  variant={sortBy === option.value ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSortBy(option.value)}
-                  className={`transition-all duration-300 text-xs sm:text-sm ${
-                    sortBy === option.value
-                      ? "bg-linear-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30"
-                      : "hover:border-purple-300"
-                  }`}
-                >
-                  <FontAwesomeIcon icon={option.icon} className="mr-1.5" />
-                  {option.label}
-                </Button>
-              ))}
-            </div>
+
           </div>
         </div>
       </header>
@@ -192,7 +132,9 @@ function HomeContent() {
             <PostFeed
               key={feedKey}
               sortBy={sortBy}
+              onSortChange={setSortBy}
               viewMode={viewMode}
+              onViewModeChange={setViewMode}
               onResetSort={() => {
                 setSortBy("latest");
                 setActiveTag(null);

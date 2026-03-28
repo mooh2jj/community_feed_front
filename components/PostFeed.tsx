@@ -10,6 +10,10 @@ import {
   faSearch,
   faTimes,
   faClock,
+  faFire,
+  faEye,
+  faGrip,
+  faList,
   faChevronLeft,
   faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
@@ -52,9 +56,19 @@ const recentSearchStorage = {
   },
 };
 
+type SortOption = "latest" | "popular" | "views";
+
+const SORT_OPTIONS: { value: SortOption; label: string; icon: typeof faClock }[] = [
+  { value: "latest", label: "최신순", icon: faClock },
+  { value: "popular", label: "인기순", icon: faFire },
+  { value: "views", label: "조회순", icon: faEye },
+];
+
 interface PostFeedProps {
-  sortBy?: "latest" | "popular" | "views";
+  sortBy?: SortOption;
+  onSortChange?: (sort: SortOption) => void;
   viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
   onResetSort?: () => void;
   initialSearchKeyword?: string;
   /** 외부(page.tsx)에서 주입하는 태그 필터 (예: "#책") */
@@ -75,7 +89,9 @@ const GRID_PAGE_SIZE = 20;
  */
 export default function PostFeed({
   sortBy = "latest",
+  onSortChange,
   viewMode = "grid",
+  onViewModeChange,
   onResetSort,
   initialSearchKeyword = "",
   activeTag = null,
@@ -308,13 +324,12 @@ export default function PostFeed({
   // ─── 렌더링 ───────────────────────────────────────────────────────────────
   return (
     <div>
-      {/* 검색창 및 초기화 */}
-      <div className="mb-6 space-y-4">
-        <div className="flex items-center gap-3">
-          <div
-            ref={searchWrapperRef}
-            className="relative flex-1 max-w-2xl mx-auto"
-          >
+      {/* ── 검색 + 툴바 영역 ── */}
+      <div className="mb-6">
+
+        {/* Row 1: 검색 바 */}
+        <div className="flex items-center gap-3 mb-3">
+          <div ref={searchWrapperRef} className="relative flex-1">
             <Input
               type="text"
               placeholder="게시물 검색... (예: 알고리즘, SQL)"
@@ -322,28 +337,20 @@ export default function PostFeed({
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={handleKeyDown}
               onFocus={() => setShowDropdown(true)}
-              className="pl-12 pr-24 py-6 text-base border-2 border-purple-200 focus:border-purple-500 rounded-2xl"
+              className="pl-11 pr-10 py-5 text-sm border-2 border-gray-200 focus:border-purple-400 rounded-xl"
             />
             <FontAwesomeIcon
               icon={faSearch}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
             />
             {searchInput && (
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={handleClearSearch}
-                className="absolute right-20 top-1/2 -translate-y-1/2"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
               >
-                <FontAwesomeIcon icon={faTimes} className="text-gray-400" />
-              </Button>
+                <FontAwesomeIcon icon={faTimes} className="text-sm" />
+              </button>
             )}
-            <Button
-              onClick={() => handleSearch()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-linear-to-r from-purple-600 to-pink-600"
-            >
-              검색
-            </Button>
 
             {/* 최근 검색어 드롭다운 */}
             {showDropdown && recentSearches.length > 0 && (
@@ -387,32 +394,99 @@ export default function PostFeed({
             )}
           </div>
 
-          {(sortBy !== "latest" || searchKeyword) && onResetSort && (
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => {
-                onResetSort();
-                handleClearSearch();
-              }}
-              className="px-4 py-6 text-gray-600 hover:text-purple-600 hover:border-purple-400 border-2 rounded-2xl whitespace-nowrap"
-            >
-              <FontAwesomeIcon icon={faTimes} className="mr-2" />
-              초기화
-            </Button>
+          {/* 검색 버튼 */}
+          <Button
+            onClick={() => handleSearch()}
+            className="px-5 py-5 rounded-xl bg-linear-to-r from-purple-600 to-pink-600 text-white font-semibold shrink-0"
+          >
+            검색
+          </Button>
+        </div>
+
+        {/* Row 2: 구분선 */}
+        <div className="border-t border-gray-100 mb-2.5" />
+
+        {/* Row 3: 정렬 텍스트 링크(좌) + 뷰 토글(우) */}
+        <div className="flex items-center justify-between">
+          {/* 정렬 텍스트 링크 */}
+          <div className="flex items-center gap-0.5">
+            {SORT_OPTIONS.map((option, idx) => {
+              const isActive = sortBy === option.value;
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => onSortChange?.(option.value)}
+                  className={`
+                    flex items-center text-sm transition-colors duration-150
+                    ${isActive
+                      ? "text-purple-600 font-bold"
+                      : "text-gray-400 hover:text-gray-700 font-medium"
+                    }
+                  `}
+                >
+                  {idx > 0 && (
+                    <span className="mx-2 text-gray-200 font-normal select-none">·</span>
+                  )}
+                  {isActive && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 mr-1.5 shrink-0 inline-block" />
+                  )}
+                  {option.label}
+                </button>
+              );
+            })}
+
+            {/* 초기화 버튼 */}
+            {(sortBy !== "latest" || searchKeyword) && onResetSort && (
+              <button
+                onClick={() => { onResetSort(); handleClearSearch(); }}
+                className="ml-3 flex items-center gap-1 text-xs text-gray-400 hover:text-purple-600 transition-colors"
+              >
+                <FontAwesomeIcon icon={faTimes} className="text-[10px]" />
+                초기화
+              </button>
+            )}
+          </div>
+
+          {/* 뷰 모드 토글 */}
+          {onViewModeChange && (
+            <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                onClick={() => onViewModeChange("grid")}
+                className={`px-2.5 py-1.5 transition-colors ${
+                  viewMode === "grid"
+                    ? "bg-purple-600 text-white"
+                    : "text-gray-400 hover:text-purple-600 hover:bg-purple-50"
+                }`}
+                title="그리드 뷰"
+              >
+                <FontAwesomeIcon icon={faGrip} className="text-xs" />
+              </button>
+              <button
+                onClick={() => onViewModeChange("list")}
+                className={`px-2.5 py-1.5 transition-colors ${
+                  viewMode === "list"
+                    ? "bg-purple-600 text-white"
+                    : "text-gray-400 hover:text-purple-600 hover:bg-purple-50"
+                }`}
+                title="리스트 뷰"
+              >
+                <FontAwesomeIcon icon={faList} className="text-xs" />
+              </button>
+            </div>
           )}
         </div>
 
+        {/* 현재 검색어 태그 */}
         {searchKeyword && (
-          <div className="text-center mt-4">
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm">
-              <FontAwesomeIcon icon={faSearch} />
-              검색어: <strong>{searchKeyword}</strong>
+          <div className="mt-3">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-50 border border-purple-200 text-purple-700 rounded-full text-xs font-medium">
+              <FontAwesomeIcon icon={faSearch} className="text-[10px]" />
+              <strong>{searchKeyword}</strong>
               <button
                 onClick={handleClearSearch}
-                className="ml-2 hover:text-purple-900"
+                className="ml-1 text-purple-400 hover:text-purple-700 transition-colors"
               >
-                <FontAwesomeIcon icon={faTimes} />
+                <FontAwesomeIcon icon={faTimes} className="text-[10px]" />
               </button>
             </span>
           </div>
