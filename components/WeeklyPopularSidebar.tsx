@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { postAPI } from "@/lib/api";
 import { WeeklyPopularPost } from "@/lib/types";
 
@@ -67,7 +68,7 @@ export default function WeeklyPopularSidebar() {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
       {/* 카드 헤더 */}
-      <h3 className="text-sm font-bold text-gray-800 mb-3">이번 주 인기글</h3>
+      <h3 className="text-sm font-bold text-gray-800 mb-3">이번 주 BEST 글</h3>
 
       {/* 인기글 목록 */}
       <ul className="space-y-3">
@@ -75,27 +76,32 @@ export default function WeeklyPopularSidebar() {
           const { bg, text } = getRankStyle(post.rank);
 
           return (
-            <li key={post.rank} className="flex items-start gap-2">
-              {/* 순위 배지 */}
-              <span
-                className={`
-                  shrink-0 w-5 h-5 rounded-full flex items-center justify-center
-                  text-[10px] font-bold mt-0.5
-                  ${bg} ${text}
-                `}
+            <li key={post.rank}>
+              <Link
+                href={`/post/${post.postId}`}
+                className="flex items-start gap-2 hover:bg-gray-50 rounded-lg p-1 -m-1 transition-colors"
               >
-                {post.rank}
-              </span>
+                {/* 순위 배지 */}
+                <span
+                  className={`
+                    shrink-0 w-5 h-5 rounded-full flex items-center justify-center
+                    text-[10px] font-bold mt-0.5
+                    ${bg} ${text}
+                  `}
+                >
+                  {post.rank}
+                </span>
 
-              {/* 글 내용 + 작성자 */}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-700 leading-snug line-clamp-2">
-                  {post.content}
-                </p>
-                <p className="text-[10px] text-gray-400 mt-0.5 truncate">
-                  {post.authorName}
-                </p>
-              </div>
+                {/* 글 내용 + 작성자 */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-700 leading-snug line-clamp-2 group-hover:text-purple-700">
+                    {post.content}
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-0.5 truncate">
+                    {post.authorName}
+                  </p>
+                </div>
+              </Link>
             </li>
           );
         })}

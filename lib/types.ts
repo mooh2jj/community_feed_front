@@ -113,6 +113,7 @@ export interface PaginationResponse<T> {
 // 주간 인기글 단일 항목
 export interface WeeklyPopularPost {
   rank: number;
+  postId: number;
   content: string;
   authorName: string;
   authorProfileImageUrl: string | null;
