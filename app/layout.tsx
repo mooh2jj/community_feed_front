@@ -30,20 +30,20 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "StudyMate - 스터디 인증 커뮤니티",
+  title: "StudyMate",
   description: "MZ세대를 위한 스터디 인증 및 랭킹 플랫폼",
   metadataBase: new URL(BASE_URL),
   openGraph: {
     type: "website",
     url: BASE_URL,
-    title: "StudyMate - 스터디 인증 커뮤니티",
+    title: "StudyMate",
     description: "MZ세대를 위한 스터디 인증 및 랭킹 플랫폼",
     images: [{ url: OG_IMAGE }],
   },
   twitter: {
     card: "summary_large_image",
     site: BASE_URL,
-    title: "StudyMate - 스터디 인증 커뮤니티",
+    title: "StudyMate",
     description: "MZ세대를 위한 스터디 인증 및 랭킹 플랫폼",
     images: [OG_IMAGE],
   },
