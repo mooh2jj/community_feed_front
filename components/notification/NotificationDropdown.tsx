@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBell, faCheckDouble } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBell,
+  faCheckDouble,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
 import { useNotification } from "@/context/NotificationContext";
 import NotificationItem from "@/components/notification/NotificationItem";
 
@@ -11,13 +15,24 @@ import NotificationItem from "@/components/notification/NotificationItem";
  * - Navigation 하단 바 위에 bottom-16 위치로 고정
  * - 외부 클릭 시 자동 닫힘
  * - 로딩 스켈레톤 / 빈 상태 / 알림 목록 표시
+ * - 전체 읽음 / 전체 삭제 버튼 (헤더)
  */
 export default function NotificationDropdown() {
-  const { isOpen, notifications, isLoading, closeDropdown, markAllRead } =
-    useNotification();
+  const {
+    isOpen,
+    notifications,
+    isLoading,
+    closeDropdown,
+    markAllRead,
+    deleteAll,
+  } = useNotification();
 
+  // 전체삭제 2-step 확인 (첫 클릭: confirm 상태, 두 번째 클릭: 실행)
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   // 드롭다운 DOM 참조 (외부 클릭 감지용)
   const panelRef = useRef<HTMLDivElement>(null);
+  // confirm 타이머 (3초 후 자동 취소)
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 패널 외부 클릭 시 닫기
   useEffect(() => {
@@ -36,9 +51,33 @@ export default function NotificationDropdown() {
     };
   }, [isOpen, closeDropdown]);
 
+  // 컴포넌트 언마운트 시 confirm 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    };
+  }, []);
+
   if (!isOpen) return null;
 
   const hasUnread = notifications.some((n) => !n.isRead);
+  const hasNotifications = notifications.length > 0;
+
+  /** 전체삭제 버튼 클릭 핸들러 (2-step confirm) */
+  const handleDeleteClick = () => {
+    if (!isConfirmingDelete) {
+      // 1단계: confirm 상태로 전환, 3초 후 자동 취소
+      setIsConfirmingDelete(true);
+      confirmTimerRef.current = setTimeout(() => {
+        setIsConfirmingDelete(false);
+      }, 3000);
+      return;
+    }
+    // 2단계: 실제 삭제 실행
+    setIsConfirmingDelete(false);
+    if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
+    deleteAll();
+  };
 
   return (
     <div
@@ -58,20 +97,47 @@ export default function NotificationDropdown() {
           <h3 className="text-sm font-bold text-gray-800">알림</h3>
         </div>
 
-        {/* 전체 읽음 버튼 (미읽음 있을 때만 활성) */}
-        <button
-          onClick={markAllRead}
-          disabled={!hasUnread}
-          className="
-            flex items-center gap-1.5 text-xs font-medium
-            text-gray-400 hover:text-purple-600
-            disabled:opacity-30 disabled:cursor-not-allowed
-            transition-colors duration-150
-          "
-        >
-          <FontAwesomeIcon icon={faCheckDouble} />
-          전체 읽음
-        </button>
+        {/* 액션 버튼 그룹 */}
+        <div className="flex items-center gap-2">
+          {/* 전체 읽음 버튼 (미읽음 있을 때만 활성) */}
+          <button
+            onClick={markAllRead}
+            disabled={!hasUnread}
+            className="
+              flex items-center gap-1.5 text-xs font-medium
+              text-gray-400 hover:text-purple-600
+              disabled:opacity-30 disabled:cursor-not-allowed
+              transition-colors duration-150
+            "
+          >
+            <FontAwesomeIcon icon={faCheckDouble} />
+            전체 읽음
+          </button>
+
+          {/* 구분선 */}
+          {hasNotifications && (
+            <span className="text-gray-200 select-none">|</span>
+          )}
+
+          {/* 전체 삭제 버튼 (알림 있을 때만 표시, 2-step confirm) */}
+          {hasNotifications && (
+            <button
+              onClick={handleDeleteClick}
+              className={`
+                flex items-center gap-1.5 text-xs font-medium transition-colors duration-150
+                ${
+                  isConfirmingDelete
+                    ? // confirm 상태: 빨간색으로 강조 (한 번 더 누르면 삭제됩니다)
+                      "text-red-500 hover:text-red-700"
+                    : "text-gray-400 hover:text-red-500"
+                }
+              `}
+            >
+              <FontAwesomeIcon icon={faTrash} />
+              {isConfirmingDelete ? "삭제 확인" : "전체 삭제"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 본문: 로딩 / 빈 상태 / 목록 */}
@@ -105,7 +171,7 @@ export default function NotificationDropdown() {
             <p className="text-sm text-gray-400">아직 알림이 없습니다</p>
           </div>
         ) : (
-          // 알림 목록
+          // 알림 목록 (읽음/미읽음 혼합 표시)
           <div className="divide-y divide-gray-50">
             {notifications.map((notification) => (
               <NotificationItem

@@ -34,6 +34,8 @@ interface NotificationContextType {
   markAllRead: () => Promise<void>;
   /** 단일 알림 읽음 처리 (클릭 시 호출) */
   markOneRead: (id: number) => Promise<void>;
+  /** 전체 알림 삭제 */
+  deleteAll: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null);
@@ -60,12 +62,12 @@ export function NotificationProvider({
    * 알림 목록 전체를 서버에서 가져와 상태 업데이트
    * 드롭다운을 열 때마다 호출
    */
-  // 드롭다운 열릴 때 미읽음 알림만 조회 (isRead=false)
+  // 드롭다운 열릴 때 전체 알림 조회 (isRead 필터 없이 모두 표시)
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
     setIsLoading(true);
     try {
-      const res = await notificationAPI.getAll(false);
+      const res = await notificationAPI.getAll();
       setNotifications(res.data);
     } catch (e) {
       console.error("[Notification] 목록 조회 실패:", e);
@@ -151,6 +153,7 @@ export function NotificationProvider({
 
   /**
    * 단일 알림 읽음 처리 (Optimistic Update)
+   * - GET /notifications/{id} 호출 → 서버에서 자동 읽음 처리
    * - 이미 읽은 알림이면 API 호출 생략
    * - UI를 즉시 업데이트 후 API 호출 (Optimistic)
    * - API 실패 시 롤백
@@ -168,10 +171,11 @@ export function NotificationProvider({
       setUnreadCount((prev) => Math.max(0, prev - 1));
 
       try {
-        await notificationAPI.markRead(id);
+        // 단건 조회 = 서버 자동 읽음 처리 (GET /notifications/{id})
+        await notificationAPI.getOne(id);
       } catch (e) {
         console.error("[Notification] 읽음 처리 실패 - 롤백:", e);
-        // API 실패 시 롤백
+        // 실패 시 롤백
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, isRead: false } : n)),
         );
@@ -180,6 +184,32 @@ export function NotificationProvider({
     },
     [notifications],
   );
+
+  /**
+   * 전체 알림 삭제
+   * - 현재 목록의 모든 알림 ID를 payload로 전달
+   * - Optimistic Update: API 응답 전에 UI 즉시 초기화
+   * - API 실패 시 롤백
+   */
+  const deleteAll = useCallback(async () => {
+    const ids = notifications.map((n) => n.id);
+    if (ids.length === 0) return;
+
+    // Optimistic Update: 즉시 UI 초기화
+    const snapshot = notifications;
+    const snapshotCount = unreadCount;
+    setNotifications([]);
+    setUnreadCount(0);
+
+    try {
+      await notificationAPI.deleteAll(ids);
+    } catch (e) {
+      console.error("[Notification] 전체 삭제 실패 - 롤백:", e);
+      // 실패 시 롤백
+      setNotifications(snapshot);
+      setUnreadCount(snapshotCount);
+    }
+  }, [notifications, unreadCount]);
 
   return (
     <NotificationContext.Provider
@@ -192,6 +222,7 @@ export function NotificationProvider({
         closeDropdown,
         markAllRead,
         markOneRead,
+        deleteAll,
       }}
     >
       {children}

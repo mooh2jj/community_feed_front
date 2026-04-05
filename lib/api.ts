@@ -921,6 +921,13 @@ export const notificationAPI = {
   getUnreadCount: (): Promise<ApiResult<number>> =>
     fetchAPI("/notifications/unread-count"),
 
+  /**
+   * 알림 단건 조회 (GET /notifications/{id})
+   * 조회 시 서버에서 자동으로 isRead: true 처리됩니다.
+   */
+  getOne: (id: number): Promise<ApiResult<NotificationResponse>> =>
+    fetchAPI(`/notifications/${id}`),
+
   /** 전체 알림 읽음 처리 */
   markAllRead: (): Promise<ApiResult<null>> =>
     fetchAPI("/notifications/read-all", { method: "PATCH" }),
@@ -928,6 +935,18 @@ export const notificationAPI = {
   /** 특정 알림 읽음 처리 (PATCH /notifications/{id}/read) */
   markRead: (id: number): Promise<ApiResult<null>> =>
     fetchAPI(`/notifications/${id}/read`, { method: "PATCH" }),
+
+  /**
+   * 알림 일괄 삭제 (DELETE /notifications)
+   * 본인 소유 알림만 삭제됨 (타인 ID는 서버에서 무시)
+   * @param ids - 삭제할 알림 ID 배열
+   */
+  deleteAll: (ids: number[]): Promise<ApiResult<null>> =>
+    fetchAPI("/notifications", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(ids),
+    }),
 };
 
 /**
