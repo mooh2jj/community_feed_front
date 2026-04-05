@@ -141,71 +141,87 @@ export default function ChatbotWindow({ onClose }: Props) {
 
       setMessages((prev) => [...prev, userMsg]);
 
-      // 스트리밍 API 호출
-      // aiMsg, aiMsgId 는 핸들러 내부에서 생성된 로컬 변수 → 클로저로 정상 캡처됨
-      await streamChat(query, 5, {
-        /** metadata 이벤트: 출처 게시글 ID 수신 → AI 메시지 등록 */
-        onMetadata: (sourcePostIds) => {
-          setIsPending(false); // 타이핑 인디케이터 제거 후 메시지 버블 등록
-          setMessages((prev) => [...prev, { ...aiMsg, sourcePostIds }]);
-        },
+      // 스트리밍 + explain API를 병렬로 호출합니다.
+      // explain은 실패해도 채팅에는 영향 없도록 catch(() => null) 처리합니다.
+      const [, explainResult] = await Promise.all([
+        streamChat(query, 5, {
+          /** metadata 이벤트: 출처 게시글 ID 수신 → AI 메시지 등록 */
+          onMetadata: (sourcePostIds) => {
+            setIsPending(false); // 타이핑 인디케이터 제거 후 메시지 버블 등록
+            setMessages((prev) => [...prev, { ...aiMsg, sourcePostIds }]);
+          },
 
-        /** token 이벤트: 토큰 단위로 내용 누적 */
-        onToken: (token) => {
-          setIsPending(false);
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === aiMsgId
-                ? { ...msg, content: msg.content + token }
-                : msg,
-            ),
-          );
-        },
-
-        /** done 이벤트: 스트리밍 완료 → 커서 제거 */
-        onDone: () => {
-          setIsPending(false);
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg,
-            ),
-          );
-          setIsStreaming(false);
-        },
-
-        /** 오류 처리: 오류 메시지로 대체 */
-        onError: (error) => {
-          console.error("[ChatbotWindow] 스트리밍 오류:", error);
-          setIsPending(false);
-          setMessages((prev) => {
-            // AI 메시지가 이미 추가된 경우 내용을 오류 메시지로 교체
-            const hasAiMsg = prev.some((msg) => msg.id === aiMsgId);
-            if (hasAiMsg) {
-              return prev.map((msg) =>
+          /** token 이벤트: 토큰 단위로 내용 누적 */
+          onToken: (token) => {
+            setIsPending(false);
+            setMessages((prev) =>
+              prev.map((msg) =>
                 msg.id === aiMsgId
-                  ? {
-                      ...msg,
-                      content:
-                        "죄송해요, 응답 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
-                      isStreaming: false,
-                    }
+                  ? { ...msg, content: msg.content + token }
                   : msg,
-              );
-            }
-            // 아직 AI 메시지가 없으면 새로 추가
-            return [
-              ...prev,
-              {
-                ...aiMsg,
-                content:
-                  "죄송해요, 응답 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
-                isStreaming: false,
-              },
-            ];
-          });
-          setIsStreaming(false);
-        },
-      });
+              ),
+            );
+          },
+
+          /** done 이벤트: 스트리밍 완료 → 커서 제거 */
+          onDone: () => {
+            setIsPending(false);
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg,
+              ),
+            );
+            setIsStreaming(false);
+          },
+
+          /** 오류 처리: 오류 메시지로 대체 */
+          onError: (error) => {
+            console.error("[ChatbotWindow] 스트리밍 오류:", error);
+            setIsPending(false);
+            setMessages((prev) => {
+              // AI 메시지가 이미 추가된 경우 내용을 오류 메시지로 교체
+              const hasAiMsg = prev.some((msg) => msg.id === aiMsgId);
+              if (hasAiMsg) {
+                return prev.map((msg) =>
+                  msg.id === aiMsgId
+                    ? {
+                        ...msg,
+                        content:
+                          "죄송해요, 응답 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
+                        isStreaming: false,
+                      }
+                    : msg,
+                );
+              }
+              // 아직 AI 메시지가 없으면 새로 추가
+              return [
+                ...prev,
+                {
+                  ...aiMsg,
+                  content:
+                    "죄송해요, 응답 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
+                  isStreaming: false,
+                },
+              ];
+            });
+            setIsStreaming(false);
+          },
+        }),
+
+        // explain API: 인텐트 메타데이터 병렬 요청 (실패 시 null)
+        aiAPI.explainChat(query, 5).catch(() => null),
+      ]);
+
+      // explain 결과의 graphMeta 가 있으면 AI 메시지에 intentInfo를 주입합니다.
+      if (explainResult?.success && explainResult.data?.graphMeta) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === aiMsgId
+              ? { ...msg, intentInfo: explainResult.data!.graphMeta! }
+              : msg,
+          ),
+        );
+      }
     },
     [input, isStreaming, genId],
   ); // aiMsg/aiMsgId 는 handleSend 내부 로컬 변수

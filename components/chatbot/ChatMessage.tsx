@@ -174,6 +174,28 @@ export default function ChatMessage({ message, onKeywordSelect }: Props) {
               ))}
             </div>
           )}
+
+        {/* 인텐트 뱃지 — AI가 어떤 그래프 경로로 게시글을 탐색했는지 표시 */}
+        {!message.isStreaming && message.intentInfo && (
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            {/* 인텐트 라벨 뱃지 */}
+            <span
+              className="inline-flex items-center gap-1 text-[11px] font-semibold bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-full px-2.5 py-0.5"
+              title={message.intentInfo.cypherPattern}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+              {message.intentInfo.intentKorLabel}
+            </span>
+            {/* 검색 결과 수 요약 */}
+            <span className="text-[11px] text-gray-400">
+              그래프&nbsp;{message.intentInfo.graphPostCount}건 · 벡터&nbsp;
+              {message.intentInfo.vectorPostCount}건 →{" "}
+              <span className="font-medium text-gray-500">
+                총&nbsp;{message.intentInfo.mergedPostCount}건
+              </span>
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

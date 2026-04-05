@@ -705,6 +705,35 @@ export const aiAPI = {
     }
     return res.json() as Promise<ApiResult<ImageAnalysisResponse>>;
   },
+
+  /**
+   * POST /ai/chat/explain
+   * 쿼리를 어떤 그래프 인텐트(경로)로 처리했는지 메타데이터를 반환합니다.
+   * 스트리밍과 병렬로 호출하여 채팅 완료 후 인텐트 뱃지를 표시합니다.
+   *
+   * @param query - 사용자 질문 (streamChat과 동일한 쿼리)
+   * @param topK  - 참조할 유사 게시글 수 (기본 5)
+   */
+  explainChat: async (
+    query: string,
+    topK: number = 5,
+  ): Promise<ApiResult<import("./types").ChatExplainData>> => {
+    const token = getAccessToken();
+    const res = await fetch(`${API_BASE_URL}/ai/chat/explain`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: "include",
+      body: JSON.stringify({ query, topK }),
+    });
+    if (!res.ok) {
+      throw new Error(`explain 요청 실패 (${res.status})`);
+    }
+    // 실제 응답: { success, data: { answer, sourcePostIds, noDataFound, graphMeta } }
+    return res.json() as Promise<ApiResult<import("./types").ChatExplainData>>;
+  },
 };
 // ─── 챗봇 스트리밍 API ────────────────────────────────────────────────────────
 

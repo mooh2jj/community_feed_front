@@ -234,6 +234,44 @@ export interface ImageAnalysisResponse {
 /** 채팅 메시지 역할 */
 export type ChatRole = "user" | "ai";
 
+/**
+ * /ai/chat/explain 응답의 graphMeta 필드
+ * AI가 쿼리를 어떤 그래프 경로(Intent)로 처리했는지 설명합니다.
+ */
+export interface ChatGraphMeta {
+  /** 인텐트 식별자 (예: "MY_LIKES", "FOLLOW_LIKED") */
+  intent: string;
+  /** 한국어 라벨 (예: "내 좋아요 목록") */
+  intentKorLabel: string;
+  /** 그래프 경로 설명 (예: "Me -[LIKED]→ Post") */
+  pathDescription: string;
+  /** 그래프 탐색 hop 수 */
+  hopCount: number;
+  /** 실행된 Cypher 패턴 */
+  cypherPattern: string;
+  /** 그래프 검색으로 찾은 게시글 수 */
+  graphPostCount: number;
+  /** 벡터 검색으로 찾은 게시글 수 */
+  vectorPostCount: number;
+  /** 두 결과를 병합한 최종 게시글 수 */
+  mergedPostCount: number;
+}
+
+/**
+ * POST /ai/chat/explain 응답의 data 객체
+ * answer + sourcePostIds + noDataFound + graphMeta 를 한 번에 반환합니다.
+ */
+export interface ChatExplainData {
+  /** AI 생성 답변 */
+  answer: string;
+  /** 답변 근거 게시글 ID 목록 */
+  sourcePostIds: number[];
+  /** 관련 게시글 없음 여부 */
+  noDataFound: boolean;
+  /** 그래프 인텐트 메타데이터 (null 일 수 있음) */
+  graphMeta: ChatGraphMeta | null;
+}
+
 /** UI 채팅 메시지 단위 */
 export interface ChatMessage {
   /** 고유 메시지 ID */
@@ -250,6 +288,8 @@ export interface ChatMessage {
   imagePreviewUrl?: string;
   /** 이미지 분석 결과 키워드 목록 (AI 메시지) */
   imageKeywords?: string[];
+  /** explain API 응답 — AI 인텐트 분석 정보 (data.graphMeta) */
+  intentInfo?: ChatGraphMeta;
 }
 
 /** 챗봇 스트리밍 이벤트 콜백 */
