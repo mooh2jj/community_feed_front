@@ -1,11 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHeart,
   faComment,
   faUserPlus,
+  faXmark,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { NotificationResponse, NotificationType } from "@/lib/types";
 import { useNotification } from "@/context/NotificationContext";
@@ -40,7 +43,6 @@ const NOTIFICATION_CONFIG: Record<
     iconColor: "text-blue-500",
     iconBg: "bg-blue-50",
     getMessage: (actorName) => `${actorName}님이 댓글을 달았습니다`,
-    // postId: 게시글 ID, referenceId: commentId → 해당 댓글 앵커로 이동
     getHref: (referenceId, _, postId) => {
       if (postId != null && referenceId != null)
         return `/post/${postId}#comment-${referenceId}`;
@@ -77,21 +79,65 @@ interface NotificationItemProps {
   onClose: () => void;
 }
 
+/** 자동 취소 타이머 (ms) */
+const CONFIRM_TIMEOUT_MS = 3000;
+
 /**
  * 알림 단일 아이템
  * - type별 아이콘/메시지/이동 경로 자동 결정
  * - 읽음/미읽음 배경 시각적 구분
+ * - X 클릭 → 인라인 confirm 오버레이 → 3초 자동 취소
  */
 export default function NotificationItem({
   notification,
   onClose,
 }: NotificationItemProps) {
   const router = useRouter();
-  const { markOneRead } = useNotification();
+  const { markOneRead, deleteOne } = useNotification();
   const config = NOTIFICATION_CONFIG[notification.type];
 
-  const handleClick = () => {
-    // 미읽음 알림인 경우 읽음 처리 (Optimistic Update)
+  // 삭제 confirm 오버레이 표시 여부
+  const [isConfirming, setIsConfirming] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  /** confirm 모드 진입: 3초 후 자동 취소 */
+  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsConfirming(true);
+    timerRef.current = setTimeout(
+      () => setIsConfirming(false),
+      CONFIRM_TIMEOUT_MS,
+    );
+  }, []);
+
+  /** 취소: confirm 모드 해제 */
+  const handleCancel = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsConfirming(false);
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, []);
+
+  /** 삭제 확정 실행 */
+  const handleConfirmDelete = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (timerRef.current) clearTimeout(timerRef.current);
+      deleteOne(notification.id);
+    },
+    [deleteOne, notification.id],
+  );
+
+  /** 아이템 본체 클릭 → 읽음 처리 + 페이지 이동 */
+  const handleClick = useCallback(() => {
+    // confirm 상태에서는 아이템 클릭 무시
+    if (isConfirming) return;
     if (!notification.isRead) {
       markOneRead(notification.id);
     }
@@ -102,17 +148,20 @@ export default function NotificationItem({
     );
     onClose();
     router.push(href);
-  };
+  }, [isConfirming, notification, markOneRead, config, onClose, router]);
 
   return (
-    <button
-      onClick={handleClick}
+    // div로 래핑하여 내부 button 중첩 허용 (button inside button은 HTML 비표준)
+    <div
       className={`
-        w-full flex items-start gap-3 px-4 py-3
-        text-left transition-colors duration-150
-        hover:bg-gray-50 active:bg-gray-100
-        ${notification.isRead ? "bg-white" : "bg-purple-50/60"}
+        relative flex items-start gap-3 px-4 py-3 cursor-pointer
+        transition-colors duration-150
+        ${isConfirming ? "bg-red-50/70" : notification.isRead ? "bg-white hover:bg-gray-50 active:bg-gray-100" : "bg-purple-50/60 hover:bg-purple-50"}
       `}
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && handleClick()}
     >
       {/* 아이콘 원형 배지 */}
       <span
@@ -137,10 +186,65 @@ export default function NotificationItem({
         </p>
       </div>
 
-      {/* 미읽음 점 */}
-      {!notification.isRead && (
-        <span className="shrink-0 w-2 h-2 rounded-full bg-purple-500 mt-2" />
-      )}
-    </button>
+      {/* 우측 영역: 미읽음 점 + X 버튼 */}
+      <div className="shrink-0 flex flex-col items-center gap-1.5 mt-1">
+        {!notification.isRead && (
+          <span className="w-2 h-2 rounded-full bg-purple-500" />
+        )}
+        <button
+          onClick={handleDeleteClick}
+          aria-label="알림 삭제"
+          className="
+            w-5 h-5 flex items-center justify-center rounded-full
+            text-gray-300 hover:text-red-400 hover:bg-red-50
+            transition-colors duration-150
+          "
+        >
+          <FontAwesomeIcon icon={faXmark} className="text-xs" />
+        </button>
+      </div>
+
+      {/* ─── 삭제 confirm 인라인 오버레이 ─────────────────────────────────── */}
+      {/* X 버튼 클릭 시 아이템 위에 슬라이드업으로 등장 */}
+      <div
+        className={`
+          absolute inset-0 flex items-center justify-between px-4
+          bg-white/95 backdrop-blur-[2px]
+          transition-all duration-200 ease-out
+          ${isConfirming ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-1 pointer-events-none"}
+        `}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 안내 텍스트 */}
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <FontAwesomeIcon icon={faTrash} className="text-red-400 text-xs" />
+          <span>알림을 삭제할까요?</span>
+        </div>
+
+        {/* 취소 / 삭제 버튼 */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCancel}
+            className="
+              px-3 py-1 text-xs font-medium rounded-full
+              text-gray-500 bg-gray-100 hover:bg-gray-200
+              transition-colors duration-150
+            "
+          >
+            취소
+          </button>
+          <button
+            onClick={handleConfirmDelete}
+            className="
+              px-3 py-1 text-xs font-medium rounded-full
+              text-white bg-red-500 hover:bg-red-600
+              transition-colors duration-150
+            "
+          >
+            삭제
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -36,6 +36,8 @@ interface NotificationContextType {
   markOneRead: (id: number) => Promise<void>;
   /** 전체 알림 삭제 */
   deleteAll: () => Promise<void>;
+  /** 단일 알림 삭제 */
+  deleteOne: (id: number) => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null);
@@ -211,6 +213,38 @@ export function NotificationProvider({
     }
   }, [notifications, unreadCount]);
 
+  /**
+   * 단일 알림 삭제 (Optimistic Update)
+   * - UI에서 즐시 제거 후 DELETE API 호출
+   * - API 실패 시 원래 항목 롤백
+   */
+  const deleteOne = useCallback(
+    async (id: number) => {
+      const target = notifications.find((n) => n.id === id);
+      if (!target) return;
+
+      // Optimistic Update: 즉시 UI에서 제거
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      if (!target.isRead) setUnreadCount((prev) => Math.max(0, prev - 1));
+
+      try {
+        await notificationAPI.deleteOne(id);
+      } catch (e) {
+        console.error("[Notification] 단건 삭제 실패 - 롤백:", e);
+        // 실패 시 원래 위치에 삽입해 롤백
+        setNotifications((prev) => {
+          const idx = prev.findIndex((n) => n.id > id);
+          const next = [...prev];
+          if (idx === -1) next.push(target);
+          else next.splice(idx, 0, target);
+          return next;
+        });
+        if (!target.isRead) setUnreadCount((prev) => prev + 1);
+      }
+    },
+    [notifications],
+  );
+
   return (
     <NotificationContext.Provider
       value={{
@@ -223,6 +257,7 @@ export function NotificationProvider({
         markAllRead,
         markOneRead,
         deleteAll,
+        deleteOne,
       }}
     >
       {children}

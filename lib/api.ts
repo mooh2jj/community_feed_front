@@ -947,6 +947,13 @@ export const notificationAPI = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(ids),
     }),
+
+  /**
+   * 알림 단건 삭제 (DELETE /notifications/{id})
+   * @param id - 삭제할 알림 ID
+   */
+  deleteOne: (id: number): Promise<ApiResult<null>> =>
+    fetchAPI(`/notifications/${id}`, { method: "DELETE" }),
 };
 
 /**
