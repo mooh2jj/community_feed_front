@@ -33,9 +33,16 @@ export default function Navigation() {
   const navItems = [
     { href: "/", icon: faHome, label: "홈", authRequired: false },
     { href: "/?compose=true", icon: faPlus, label: "작성", authRequired: true },
-    { href: "/ranking", icon: faTrophy, label: "랭킹", authRequired: false },
+    // { href: "/ranking", icon: faTrophy, label: "랭킹", authRequired: false },
     ...(isAuthenticated
-      ? [{ href: "/dashboard", icon: faChartBar, label: "대시보드", authRequired: true }]
+      ? [
+          {
+            href: "/dashboard",
+            icon: faChartBar,
+            label: "대시보드",
+            authRequired: true,
+          },
+        ]
       : []),
     {
       href: isAuthenticated ? "/profile" : "/login",

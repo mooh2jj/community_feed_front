@@ -384,3 +384,50 @@ export interface StreakResponse {
   longestStreak: number;
   totalActiveDays: number;
 }
+
+// ─── 크리에이터 랭킹 타입 ─────────────────────────────────────────────────────
+
+/** 랭킹 단일 유저 정보 (주간/전체 공통) */
+export interface RankingUserDto {
+  rank: number;
+  email: string;
+  name: string;
+  profileImageUrl: string | null;
+  score: number;
+  /** 전주 대비 순위 변화 (양수=상승, 음수=하락, 0=동일, null=신규 진입) */
+  rankChange: number | null;
+}
+
+/** GET /ranking/weekly 응답 */
+export interface WeeklyRankingResponse {
+  /** ISO 주차 레이블 (예: "2026-W16") */
+  weekLabel: string;
+  /** 해당 주 시작일 (yyyy-MM-dd, 월요일) */
+  weekStart: string;
+  /** 해당 주 종료일 (yyyy-MM-dd, 일요일) */
+  weekEnd: string;
+  rankings: RankingUserDto[];
+  /** 로그인 사용자 랭킹 — 비로그인이면 null */
+  myRanking: RankingUserDto | null;
+}
+
+/** GET /ranking/alltime 응답 */
+export interface AllTimeRankingResponse {
+  rankings: RankingUserDto[];
+  /** 로그인 사용자 랭킹 — 비로그인이면 null */
+  myRanking: RankingUserDto | null;
+}
+
+/** GET /ranking/me 응답 (대시보드·프로필 위젯용) */
+export interface MyRankingResponse {
+  /** 이번 주 순위 — 순위권 밖이면 null */
+  weeklyRank: number | null;
+  weeklyScore: number;
+  weeklyPostCount: number | null;
+  weeklyFollowerGain: number | null;
+  /** 전주 대비 순위 변화 — 신규 진입이면 null */
+  rankChange: number | null;
+  /** 전체 기간 순위 — 순위권 밖이면 null */
+  allTimeRank: number | null;
+  allTimeScore: number;
+}

@@ -14,6 +14,7 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import PostCardSkeleton from "@/components/PostCardSkeleton";
+import WeeklyRankingCard from "@/components/WeeklyRankingCard";
 import { aiAPI } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -143,12 +144,13 @@ function HomeContent() {
             />
           </div>
 
-          {/* 우측: 인기 태그 + 주간 인기글 사이드바 (lg 이상에서만 표시, 상단 고정) */}
-          <div className="hidden lg:flex flex-col gap-4 w-52 shrink-0 sticky top-24">
+          {/* 우측: 인기 태그 + 주간 랭킹 + 주간 인기글 사이드바 (md 이상에서 표시, 상단 고정) */}
+          <div className="hidden md:flex flex-col gap-4 w-52 shrink-0 sticky top-24">
             <PopularTagsSidebar
               activeTag={activeTag}
               onTagClick={setActiveTag}
             />
+            <WeeklyRankingCard />
             <WeeklyPopularSidebar />
           </div>
         </div>

@@ -27,6 +27,9 @@ import {
   HashtagAnalyticsResponse,
   TopPostsResponse,
   StreakResponse,
+  WeeklyRankingResponse,
+  AllTimeRankingResponse,
+  MyRankingResponse,
 } from "./types";
 
 const API_BASE_URL =
@@ -670,6 +673,26 @@ export const dashboardAPI = {
   /** GET /dashboard/streak?days=84 — 연속 작성 Streak + 활동 캘린더 */
   getStreak: (days = 84): Promise<ApiResult<StreakResponse>> =>
     fetchAPI(`/dashboard/streak?days=${Math.min(Math.max(days, 7), 365)}`),
+};
+
+// ─── 크리에이터 랭킹 API ──────────────────────────────────────────────────────
+
+/**
+ * /weekly, /alltime — 비로그인 허용 (Authorization 헤더 있으면 myRanking 포함)
+ * /me — JWT 인증 필수
+ */
+export const rankingAPI = {
+  /** GET /ranking/weekly?limit=10 — 이번 주 랭킹 */
+  getWeeklyRanking: (limit = 10): Promise<ApiResult<WeeklyRankingResponse>> =>
+    fetchAPI(`/ranking/weekly?limit=${Math.min(limit, 50)}`),
+
+  /** GET /ranking/alltime?limit=10 — 전체 기간 랭킹 */
+  getAllTimeRanking: (limit = 10): Promise<ApiResult<AllTimeRankingResponse>> =>
+    fetchAPI(`/ranking/alltime?limit=${Math.min(limit, 50)}`),
+
+  /** GET /ranking/me — 내 순위 (JWT 필수) */
+  getMyRanking: (): Promise<ApiResult<MyRankingResponse>> =>
+    fetchAPI("/ranking/me"),
 };
 
 // ─── AI / PDF Import API ──────────────────────────────────────────────────────
