@@ -24,13 +24,13 @@
 
 ### 2-1. 에디터 라이브러리: Tiptap vs Quill vs Slate
 
-| 항목 | Quill | Slate | **Tiptap (채택)** |
-|---|---|---|---|
-| 유지보수 활성도 | 낮음 (정체) | 보통 | **활발 (ProseMirror 기반)** |
-| 확장 생태계 | 제한적 | 직접 구현 필요 | **공식 Extensions 풍부** |
-| TypeScript 지원 | 부분적 | 완전 지원 | **완전 지원** |
-| Next.js SSR 호환 | 불안정 | 가능 | **`immediatelyRender: false` 옵션 지원** |
-| 코드 하이라이팅 | 별도 통합 필요 | 별도 통합 필요 | **lowlight 공식 Extension 제공** |
+| 항목             | Quill          | Slate          | **Tiptap (채택)**                        |
+| ---------------- | -------------- | -------------- | ---------------------------------------- |
+| 유지보수 활성도  | 낮음 (정체)    | 보통           | **활발 (ProseMirror 기반)**              |
+| 확장 생태계      | 제한적         | 직접 구현 필요 | **공식 Extensions 풍부**                 |
+| TypeScript 지원  | 부분적         | 완전 지원      | **완전 지원**                            |
+| Next.js SSR 호환 | 불안정         | 가능           | **`immediatelyRender: false` 옵션 지원** |
+| 코드 하이라이팅  | 별도 통합 필요 | 별도 통합 필요 | **lowlight 공식 Extension 제공**         |
 
 > **결론**: 확장성, TypeScript 지원, Next.js SSR 호환, 활발한 유지보수를 이유로 **Tiptap**을 채택.
 
@@ -39,13 +39,14 @@
 ### 2-2. 이미지 저장 방식: 즉시 업로드 vs 지연 업로드(채택)
 
 **문제**: 이미지를 에디터에 삽입할 때마다 서버에 업로드하면 발생하는 이슈
+
 - 게시글 저장을 취소해도 서버에 고아 파일(orphan file)이 남음
 - 불필요한 네트워크 요청으로 UX 저하
 
-| 방식 | 고아 파일 위험 | 네트워크 요청 | 복잡도 |
-|---|---|---|---|
-| 즉시 업로드 | **있음** | 삽입 시마다 발생 | 낮음 |
-| **지연 업로드 (채택)** | **없음** | 게시 버튼 클릭 시 1회 | 중간 |
+| 방식                   | 고아 파일 위험 | 네트워크 요청         | 복잡도 |
+| ---------------------- | -------------- | --------------------- | ------ |
+| 즉시 업로드            | **있음**       | 삽입 시마다 발생      | 낮음   |
+| **지연 업로드 (채택)** | **없음**       | 게시 버튼 클릭 시 1회 | 중간   |
 
 > **결론**: `pendingFilesRef` (`Map<dataUrl, File>`)에 파일을 보관하고,
 > 게시 버튼 클릭 시 `uploadInlineImages()`가 일괄 업로드 후 HTML의 `data:` URL을
@@ -55,11 +56,11 @@
 
 ### 2-3. 출력 포맷: HTML vs Markdown vs JSON
 
-| 포맷 | 장점 | 단점 |
-|---|---|---|
-| **HTML (채택)** | 백엔드 저장·렌더링 직관적 | XSS 방어 필요 (서버 sanitize) |
-| Markdown | 사람이 읽기 쉬움 | 복잡한 서식(이미지 위치 등) 표현 한계 |
-| JSON (ProseMirror) | 재편집에 완벽 | 백엔드 파싱 복잡, 저장 용량 큼 |
+| 포맷               | 장점                      | 단점                                  |
+| ------------------ | ------------------------- | ------------------------------------- |
+| **HTML (채택)**    | 백엔드 저장·렌더링 직관적 | XSS 방어 필요 (서버 sanitize)         |
+| Markdown           | 사람이 읽기 쉬움          | 복잡한 서식(이미지 위치 등) 표현 한계 |
+| JSON (ProseMirror) | 재편집에 완벽             | 백엔드 파싱 복잡, 저장 용량 큼        |
 
 > **결론**: 백엔드 호환성과 단순성을 위해 `editor.getHTML()` 출력의 **HTML 포맷**을 채택.
 > XSS 방어는 서버 사이드 sanitize로 처리한다.
@@ -120,20 +121,20 @@ const finalContent = await uploadInlineImages(content, pendingFilesRef.current);
   onChange={setContent}
   placeholder="첫 줄은 # 제목으로 시작하세요"
   pendingFilesRef={pendingFilesRef}
-/>
+/>;
 ```
 
 ---
 
 ## 5. Tiptap Extensions 구성
 
-| Extension | 설정 | 역할 |
-|---|---|---|
-| `StarterKit` | heading levels: 1~6, codeBlock: false | 기본 서식 묶음 |
-| `Placeholder` | placeholder prop 전달 | 빈 에디터 안내 문구 |
-| `Link` | openOnClick: false, purple 스타일 | 링크 삽입·편집 |
-| `CodeBlockLowlight` | `createLowlight(common)` | 코드 블록 + 다중 언어 문법 강조 |
-| `Image` | inline: false, allowBase64: true | 인라인 이미지 (data: URL 허용) |
+| Extension           | 설정                                  | 역할                            |
+| ------------------- | ------------------------------------- | ------------------------------- |
+| `StarterKit`        | heading levels: 1~6, codeBlock: false | 기본 서식 묶음                  |
+| `Placeholder`       | placeholder prop 전달                 | 빈 에디터 안내 문구             |
+| `Link`              | openOnClick: false, purple 스타일     | 링크 삽입·편집                  |
+| `CodeBlockLowlight` | `createLowlight(common)`              | 코드 블록 + 다중 언어 문법 강조 |
+| `Image`             | inline: false, allowBase64: true      | 인라인 이미지 (data: URL 허용)  |
 
 > **Note**: `StarterKit`의 기본 `codeBlock`은 비활성화하고 `CodeBlockLowlight`로 대체한다.
 > 두 확장을 동시에 활성화하면 충돌이 발생한다.
@@ -146,20 +147,20 @@ const finalContent = await uploadInlineImages(content, pendingFilesRef.current);
 [ B ] [ I ] [ S ] | [ H1 ] [ H2 ] [ H3 ] | [ • ] [ 1. ] | [ " ] [ </> ] | [ 🔗 ] [ 🖼 ] | [ ↩ ] [ ↪ ]
 ```
 
-| 버튼 | 단축 동작 | Tiptap 명령 |
-|---|---|---|
-| **B** Bold | | `toggleBold()` |
-| **I** Italic | | `toggleItalic()` |
-| **S** Strikethrough | | `toggleStrike()` |
-| **H1 / H2 / H3** | | `toggleHeading({ level })` |
-| **•** Bullet List | | `toggleBulletList()` |
-| **1.** Ordered List | | `toggleOrderedList()` |
-| **"** Blockquote | | `toggleBlockquote()` |
-| **</>** Code Block | | `toggleCodeBlock()` |
-| **🔗** Link | `window.prompt`로 URL 입력 | `setLink({ href })` / `unsetLink()` |
-| **🖼** 이미지 | 숨겨진 `<input file>` click 트리거 | `setImage({ src: dataUrl })` |
-| **↩** Undo | | `undo()` |
-| **↪** Redo | | `redo()` |
+| 버튼                | 단축 동작                          | Tiptap 명령                         |
+| ------------------- | ---------------------------------- | ----------------------------------- |
+| **B** Bold          |                                    | `toggleBold()`                      |
+| **I** Italic        |                                    | `toggleItalic()`                    |
+| **S** Strikethrough |                                    | `toggleStrike()`                    |
+| **H1 / H2 / H3**    |                                    | `toggleHeading({ level })`          |
+| **•** Bullet List   |                                    | `toggleBulletList()`                |
+| **1.** Ordered List |                                    | `toggleOrderedList()`               |
+| **"** Blockquote    |                                    | `toggleBlockquote()`                |
+| **</>** Code Block  |                                    | `toggleCodeBlock()`                 |
+| **🔗** Link         | `window.prompt`로 URL 입력         | `setLink({ href })` / `unsetLink()` |
+| **🖼** 이미지       | 숨겨진 `<input file>` click 트리거 | `setImage({ src: dataUrl })`        |
+| **↩** Undo          |                                    | `undo()`                            |
+| **↪** Redo          |                                    | `redo()`                            |
 
 - 활성 상태 버튼: `bg-purple-600 text-white` (Purple 테마)
 - Undo/Redo: `editor.can().undo()` / `editor.can().redo()` 가능 여부로 disabled 처리
@@ -217,9 +218,9 @@ sequenceDiagram
 
 게시 버튼 클릭 시 `CreatePostPage`에서 수행하는 검사 (에디터 컴포넌트 외부):
 
-| 규칙 | 조건 | 에러 메시지 |
-|---|---|---|
-| 내용 필수 | `content.trim()` 이 비어있음 | "내용을 입력해주세요" |
+| 규칙      | 조건                         | 에러 메시지                                            |
+| --------- | ---------------------------- | ------------------------------------------------------ |
+| 내용 필수 | `content.trim()` 이 비어있음 | "내용을 입력해주세요"                                  |
 | 제목 필수 | 첫 번째 블록이 `<h1>`이 아님 | "첫 번째 줄은 반드시 제목 1(# 제목)로 시작해야 합니다" |
 
 > **Why H1 필수?**: 게시글 목록(PostCard)에서 `<h1>` 태그를 파싱해 제목으로 표시한다.
@@ -229,27 +230,27 @@ sequenceDiagram
 
 ## 9. 엣지 케이스 및 제약 사항
 
-| 케이스 | 처리 방식 |
-|---|---|
-| 이미지 크기 10MB 초과 | `toast.error` 알림, 삽입 취소 |
-| 이미지 업로드 실패 (게시 시점) | `throw new Error` → 게시 중단, toast 에러 표시 |
-| 동일 파일 재선택 | `e.target.value = ""` 초기화로 재선택 허용 |
-| SSR 하이드레이션 불일치 | `immediatelyRender: false` 옵션으로 방지 |
-| 링크 URL 입력 취소 | `url === null` 체크 후 아무 동작 없음 |
-| 링크 URL 빈 값 | `unsetLink()` 호출로 링크 제거 |
-| 에디터 미초기화 상태 | `if (!editor) return null` 가드로 null 렌더링 방지 |
+| 케이스                         | 처리 방식                                          |
+| ------------------------------ | -------------------------------------------------- |
+| 이미지 크기 10MB 초과          | `toast.error` 알림, 삽입 취소                      |
+| 이미지 업로드 실패 (게시 시점) | `throw new Error` → 게시 중단, toast 에러 표시     |
+| 동일 파일 재선택               | `e.target.value = ""` 초기화로 재선택 허용         |
+| SSR 하이드레이션 불일치        | `immediatelyRender: false` 옵션으로 방지           |
+| 링크 URL 입력 취소             | `url === null` 체크 후 아무 동작 없음              |
+| 링크 URL 빈 값                 | `unsetLink()` 호출로 링크 제거                     |
+| 에디터 미초기화 상태           | `if (!editor) return null` 가드로 null 렌더링 방지 |
 
 ---
 
 ## 10. 스타일 가이드
 
-| 영역 | Tailwind 클래스 |
-|---|---|
-| 툴바 배경 | `bg-purple-50`, `border-2 border-purple-200`, `rounded-2xl` |
-| 활성 버튼 | `bg-purple-600 text-white` |
-| 구분선 | `w-px h-8 bg-purple-300` |
+| 영역            | Tailwind 클래스                                                         |
+| --------------- | ----------------------------------------------------------------------- |
+| 툴바 배경       | `bg-purple-50`, `border-2 border-purple-200`, `rounded-2xl`             |
+| 활성 버튼       | `bg-purple-600 text-white`                                              |
+| 구분선          | `w-px h-8 bg-purple-300`                                                |
 | 에디터 컨테이너 | `border-2 border-purple-200 focus-within:border-purple-500 rounded-2xl` |
-| 에디터 내부 | `prose prose-sm max-w-none min-h-[200px] p-4 text-gray-700` |
-| 링크 | `text-purple-600 underline hover:text-purple-700` |
-| 코드 블록 | `bg-gray-900 rounded-lg p-4 font-mono text-sm overflow-x-auto` |
-| 이미지 | `rounded-xl max-w-full my-2 block cursor-pointer` |
+| 에디터 내부     | `prose prose-sm max-w-none min-h-[200px] p-4 text-gray-700`             |
+| 링크            | `text-purple-600 underline hover:text-purple-700`                       |
+| 코드 블록       | `bg-gray-900 rounded-lg p-4 font-mono text-sm overflow-x-auto`          |
+| 이미지          | `rounded-xl max-w-full my-2 block cursor-pointer`                       |
