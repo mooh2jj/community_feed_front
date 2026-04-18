@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   AreaChart,
   Area,
@@ -10,31 +10,40 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { DailyMetric } from "@/lib/types";
+import { dashboardAPI } from "@/lib/api";
+import { DailyMetric, DailyMetricsResponse } from "@/lib/types";
 
-type Period = "7d" | "30d" | "all";
+type Period = "7d" | "30d" | "90d";
 
 interface TabConfig {
-  key: string;
+  key: keyof Pick<DailyMetricsResponse, "views" | "likes" | "posts" | "followers">;
   label: string;
   emoji: string;
-  data: DailyMetric[];
   color: string;
 }
 
-interface Props {
-  views: DailyMetric[];
-  likes: DailyMetric[];
-  posts: DailyMetric[];
-  followers: DailyMetric[];
-}
+const ALL_TABS: TabConfig[] = [
+  { key: "views",     label: "조회수", emoji: "👁",  color: "#7c3aed" },
+  { key: "likes",     label: "좋아요", emoji: "❤️",  color: "#ec4899" },
+  { key: "posts",     label: "게시글", emoji: "📝",  color: "#06b6d4" },
+  { key: "followers", label: "팔로워", emoji: "👥",  color: "#10b981" },
+];
 
-function filterByPeriod(data: DailyMetric[], period: Period): DailyMetric[] {
-  if (period === "all") return data;
-  const days = period === "7d" ? 7 : 30;
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days);
-  return data.filter((d) => new Date(d.date) >= cutoff);
+/**
+ * 비어있는 날짜는 API가 생략하므로 프론트에서 0으로 채웁니다.
+ */
+function fillMissingDates(data: DailyMetric[], period: Period): DailyMetric[] {
+  const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
+  const countMap = new Map(data.map((d) => [d.date, d.count]));
+  const result: DailyMetric[] = [];
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    result.push({ date: dateStr, count: countMap.get(dateStr) ?? 0 });
+  }
+  return result;
 }
 
 function fmt(n: number): string {
@@ -66,21 +75,36 @@ function CustomTooltip({
 }
 
 /**
- * 기간별 콘텐츠 성과 분석 차트 (recharts AreaChart)
+ * 기간별 콘텐츠 성과 분석 차트
+ * - 기간 탭(7일/30일/90일) 변경 시 dashboardAPI.getDailyMetrics 재호출
+ * - 4가지 지표(조회수/좋아요/게시글/팔로워) 탭 전환
  */
-export default function AnalyticsChart({ views, likes, posts, followers }: Props) {
+export default function AnalyticsChart() {
   const [period, setPeriod] = useState<Period>("30d");
-  const [activeTab, setActiveTab] = useState("views");
+  const [activeTab, setActiveTab] = useState<TabConfig["key"]>("views");
+  const [metrics, setMetrics] = useState<DailyMetricsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const allTabs: TabConfig[] = [
-    { key: "views",     label: "조회수", emoji: "👁",  data: filterByPeriod(views,     period), color: "#7c3aed" },
-    { key: "likes",     label: "좋아요", emoji: "❤️",  data: filterByPeriod(likes,     period), color: "#ec4899" },
-    { key: "posts",     label: "게시글", emoji: "📝",  data: filterByPeriod(posts,     period), color: "#06b6d4" },
-    { key: "followers", label: "팔로워", emoji: "👥",  data: filterByPeriod(followers, period), color: "#10b981" },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await dashboardAPI.getDailyMetrics(period);
+        if (!cancelled && res.success) setMetrics(res.data);
+      } catch {
+        // 차트 로딩 실패는 전체 페이지에 영향 없이 조용히 처리
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [period]);
 
-  const current = allTabs.find((t) => t.key === activeTab)!;
-  const isEmpty = current.data.every((d) => d.count === 0);
+  const currentTab = ALL_TABS.find((t) => t.key === activeTab)!;
+  const chartData = fillMissingDates(metrics?.[activeTab] ?? [], period);
+  const isEmpty = chartData.every((d) => d.count === 0);
 
   return (
     <div className="bg-white rounded-3xl border-2 border-purple-100 shadow-lg p-6">
@@ -91,7 +115,7 @@ export default function AnalyticsChart({ views, likes, posts, followers }: Props
           <p className="text-xs text-gray-400 mt-0.5">기간별 주요 지표 추이</p>
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
-          {(["7d", "30d", "all"] as Period[]).map((p) => (
+          {(["7d", "30d", "90d"] as Period[]).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
@@ -99,7 +123,7 @@ export default function AnalyticsChart({ views, likes, posts, followers }: Props
                 period === p ? "bg-white text-purple-700 shadow" : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              {p === "7d" ? "7일" : p === "30d" ? "30일" : "전체"}
+              {p === "7d" ? "7일" : p === "30d" ? "30일" : "90일"}
             </button>
           ))}
         </div>
@@ -107,8 +131,9 @@ export default function AnalyticsChart({ views, likes, posts, followers }: Props
 
       {/* 지표 선택 카드 */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
-        {allTabs.map((tab) => {
-          const tabTotal = tab.data.reduce((s, d) => s + d.count, 0);
+        {ALL_TABS.map((tab) => {
+          const tabData = fillMissingDates(metrics?.[tab.key] ?? [], period);
+          const tabTotal = tabData.reduce((s, d) => s + d.count, 0);
           const isActive = activeTab === tab.key;
           return (
             <button
@@ -125,26 +150,30 @@ export default function AnalyticsChart({ views, likes, posts, followers }: Props
                 {tab.emoji} {tab.label}
               </p>
               <p className={`text-lg font-bold leading-none ${isActive ? "text-white" : "text-gray-900"}`}>
-                {fmt(tabTotal)}
+                {loading ? "—" : fmt(tabTotal)}
               </p>
             </button>
           );
         })}
       </div>
 
-      {/* 차트 */}
-      {isEmpty ? (
+      {/* 차트 영역 */}
+      {loading ? (
+        <div className="h-48 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+        </div>
+      ) : isEmpty ? (
         <div className="h-48 flex flex-col items-center justify-center text-gray-400 gap-2">
           <p className="text-3xl">📊</p>
           <p className="text-sm">선택 기간에 데이터가 없습니다</p>
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={current.data} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
             <defs>
-              <linearGradient id={`grad-${current.key}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor={current.color} stopOpacity={0.25} />
-                <stop offset="95%" stopColor={current.color} stopOpacity={0.02} />
+              <linearGradient id={`grad-${currentTab.key}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor={currentTab.color} stopOpacity={0.25} />
+                <stop offset="95%" stopColor={currentTab.color} stopOpacity={0.02} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
@@ -164,17 +193,17 @@ export default function AnalyticsChart({ views, likes, posts, followers }: Props
               width={42}
             />
             <Tooltip
-              content={(props: any) => <CustomTooltip {...props} color={current.color} />}
-              cursor={{ stroke: current.color, strokeWidth: 1, strokeDasharray: "4 4" }}
+              content={(props: any) => <CustomTooltip {...props} color={currentTab.color} />}
+              cursor={{ stroke: currentTab.color, strokeWidth: 1, strokeDasharray: "4 4" }}
             />
             <Area
               type="monotone"
               dataKey="count"
-              stroke={current.color}
+              stroke={currentTab.color}
               strokeWidth={2.5}
-              fill={`url(#grad-${current.key})`}
+              fill={`url(#grad-${currentTab.key})`}
               dot={false}
-              activeDot={{ r: 5, fill: current.color, stroke: "#fff", strokeWidth: 2 }}
+              activeDot={{ r: 5, fill: currentTab.color, stroke: "#fff", strokeWidth: 2 }}
             />
           </AreaChart>
         </ResponsiveContainer>

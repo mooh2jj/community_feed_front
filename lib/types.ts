@@ -323,3 +323,64 @@ export interface HashtagAnalytic {
   avgViews: number;
   avgLikes: number;
 }
+
+// ─── 대시보드 전용 API 응답 타입 ─────────────────────────────────────────────
+
+/** GET /dashboard/summary — 크리에이터 전체 요약 지표 */
+export interface DashboardSummaryResponse {
+  totalPosts: number;
+  totalViews: number;
+  totalLikes: number;
+  totalComments: number;
+  followerCount: number;
+  followingCount: number;
+}
+
+/** GET /dashboard/metrics/daily — 날짜별 4가지 지표 추이 */
+export interface DailyMetricsResponse {
+  period: string;
+  views: DailyMetric[];
+  likes: DailyMetric[];
+  posts: DailyMetric[];
+  followers: DailyMetric[];
+}
+
+/** GET /dashboard/hashtags — 단일 해시태그 성과 */
+export interface HashtagStatDto {
+  hashtag: string;
+  postCount: number;
+  totalViews: number;
+  totalLikes: number;
+  avgViews: number;
+  avgLikes: number;
+}
+
+/** GET /dashboard/hashtags */
+export interface HashtagAnalyticsResponse {
+  hashtags: HashtagStatDto[];
+}
+
+/** GET /dashboard/posts/top — 상위 게시글 미리보기 */
+export interface TopPostDto {
+  id: number;
+  contentPreview: string;
+  viewCount: number;
+  likeCount: number;
+  commentCount: number;
+  createdAt: string;
+}
+
+/** GET /dashboard/posts/top */
+export interface TopPostsResponse {
+  metric: string;
+  posts: TopPostDto[];
+}
+
+/** GET /dashboard/streak — 연속 작성 스트릭 */
+export interface StreakResponse {
+  /** "yyyy-MM-dd" 형식, 중복 제거·오름차순 */
+  activityDates: string[];
+  currentStreak: number;
+  longestStreak: number;
+  totalActiveDays: number;
+}

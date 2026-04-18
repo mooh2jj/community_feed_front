@@ -22,6 +22,11 @@ import {
   WeeklyPopularPost,
   NotificationResponse,
   NotificationSSECallbacks,
+  DashboardSummaryResponse,
+  DailyMetricsResponse,
+  HashtagAnalyticsResponse,
+  TopPostsResponse,
+  StreakResponse,
 } from "./types";
 
 const API_BASE_URL =
@@ -629,6 +634,42 @@ export const followAPI = {
     });
     return fetchAPI(`/users/${encodeURIComponent(email)}/following?${params}`);
   },
+};
+
+// ─── 크리에이터 대시보드 API ─────────────────────────────────────────────────
+
+/**
+ * 대시보드 전용 API (모든 엔드포인트 JWT 인증 필수)
+ */
+export const dashboardAPI = {
+  /** GET /dashboard/summary — 전체 요약 지표 1회 조회 */
+  getSummary: (): Promise<ApiResult<DashboardSummaryResponse>> =>
+    fetchAPI("/dashboard/summary"),
+
+  /** GET /dashboard/metrics/daily?period=7d|30d|90d — 일별 시계열 지표 */
+  getDailyMetrics: (
+    period: "7d" | "30d" | "90d" = "30d",
+  ): Promise<ApiResult<DailyMetricsResponse>> =>
+    fetchAPI(`/dashboard/metrics/daily?period=${period}`),
+
+  /** GET /dashboard/hashtags?limit=8 — 해시태그별 성과 분석 */
+  getHashtagAnalytics: (
+    limit = 8,
+  ): Promise<ApiResult<HashtagAnalyticsResponse>> =>
+    fetchAPI(`/dashboard/hashtags?limit=${Math.min(limit, 20)}`),
+
+  /** GET /dashboard/posts/top?metric=views|likes&limit=5 — 상위 게시글 목록 */
+  getTopPosts: (
+    metric: "views" | "likes" = "views",
+    limit = 5,
+  ): Promise<ApiResult<TopPostsResponse>> =>
+    fetchAPI(
+      `/dashboard/posts/top?metric=${metric}&limit=${Math.min(limit, 20)}`,
+    ),
+
+  /** GET /dashboard/streak?days=84 — 연속 작성 Streak + 활동 캘린더 */
+  getStreak: (days = 84): Promise<ApiResult<StreakResponse>> =>
+    fetchAPI(`/dashboard/streak?days=${Math.min(Math.max(days, 7), 365)}`),
 };
 
 // ─── AI / PDF Import API ──────────────────────────────────────────────────────

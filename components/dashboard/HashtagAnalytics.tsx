@@ -10,40 +10,10 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { PostResponse } from "@/lib/types";
-
-interface HashtagStat {
-  hashtag: string;
-  postCount: number;
-  avgViews: number;
-  avgLikes: number;
-}
+import { HashtagStatDto } from "@/lib/types";
 
 interface Props {
-  posts: PostResponse[];
-}
-
-function computeStats(posts: PostResponse[]): HashtagStat[] {
-  const map = new Map<string, { views: number[]; likes: number[] }>();
-
-  for (const post of posts) {
-    for (const tag of post.hashtags ?? []) {
-      const key = tag.startsWith("#") ? tag : `#${tag}`;
-      if (!map.has(key)) map.set(key, { views: [], likes: [] });
-      map.get(key)!.views.push(post.viewCount);
-      map.get(key)!.likes.push(post.likeCount);
-    }
-  }
-
-  return Array.from(map.entries())
-    .map(([hashtag, { views, likes }]) => ({
-      hashtag,
-      postCount: views.length,
-      avgViews: Math.round(views.reduce((s, v) => s + v, 0) / views.length),
-      avgLikes: Math.round(likes.reduce((s, v) => s + v, 0) / likes.length),
-    }))
-    .sort((a, b) => b.avgViews + b.avgLikes * 3 - (a.avgViews + a.avgLikes * 3))
-    .slice(0, 8);
+  hashtags: HashtagStatDto[];
 }
 
 function CustomTooltip({
@@ -61,9 +31,16 @@ function CustomTooltip({
       <p className="font-bold text-gray-700 mb-2">{label}</p>
       {payload.map((p) => (
         <p key={p.name} className="flex items-center gap-2">
-          <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-          <span className="text-gray-500">{p.name === "avgViews" ? "평균 조회" : "평균 좋아요"}:</span>
-          <span className="font-semibold" style={{ color: p.color }}>{p.value}</span>
+          <span
+            className="inline-block w-2 h-2 rounded-full"
+            style={{ backgroundColor: p.color }}
+          />
+          <span className="text-gray-500">
+            {p.name === "avgViews" ? "평균 조회" : "평균 좋아요"}:
+          </span>
+          <span className="font-semibold" style={{ color: p.color }}>
+            {p.value?.toLocaleString()}
+          </span>
         </p>
       ))}
     </div>
@@ -72,10 +49,10 @@ function CustomTooltip({
 
 /**
  * 해시태그 성과 차트 (recharts 가로 막대 그래프)
+ * - dashboardAPI.getHashtagAnalytics 결과를 props로 수신
+ * - 서버가 정렬(avgViews × 1 + avgLikes × 3 가중치)하여 반환
  */
-export default function HashtagAnalytics({ posts }: Props) {
-  const stats = computeStats(posts);
-
+export default function HashtagAnalytics({ hashtags }: Props) {
   return (
     <div className="bg-white rounded-3xl border-2 border-purple-100 shadow-lg p-6">
       <div className="mb-4">
@@ -83,19 +60,20 @@ export default function HashtagAnalytics({ posts }: Props) {
         <p className="text-xs text-gray-400 mt-0.5">태그별 평균 조회수 · 좋아요 비교</p>
       </div>
 
-      {stats.length === 0 ? (
+      {hashtags.length === 0 ? (
         <div className="text-center py-8 text-gray-400">
           <p className="text-4xl mb-2">🏷️</p>
           <p className="text-sm">해시태그가 있는 게시글이 없습니다.</p>
           <p className="text-xs mt-1.5">
-            게시글에 <span className="text-purple-600 font-medium">#태그</span>를 추가해보세요!
+            게시글에{" "}
+            <span className="text-purple-600 font-medium">#태그</span>를 추가해보세요!
           </p>
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={stats.length * 44 + 40}>
+        <ResponsiveContainer width="100%" height={hashtags.length * 44 + 40}>
           <BarChart
             layout="vertical"
-            data={stats}
+            data={hashtags}
             margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
             barCategoryGap="30%"
           >
@@ -114,11 +92,14 @@ export default function HashtagAnalytics({ posts }: Props) {
               tickLine={false}
               width={80}
             />
-            <Tooltip content={(props: any) => <CustomTooltip {...props} />} cursor={{ fill: "#f5f3ff" }} />
+            <Tooltip
+              content={(props: any) => <CustomTooltip {...props} />}
+              cursor={{ fill: "#f5f3ff" }}
+            />
             <Legend
               formatter={(value) => (
                 <span className="text-xs text-gray-500">
-                  {value === "avgViews" ? "평균 조회" : "평균 좋아요"}
+                  {value === "avgViews" ? "평균 조회수" : "평균 좋아요"}
                 </span>
               )}
             />
