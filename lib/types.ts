@@ -303,3 +303,23 @@ export interface ChatStreamCallbacks {
   /** 네트워크/파싱 오류 */
   onError: (error: Error) => void;
 }
+
+// ─── 크리에이터 대시보드 타입 ────────────────────────────────────────────────
+
+/** 크리에이터 레벨 (1~5) */
+export type CreatorLevel = 1 | 2 | 3 | 4 | 5;
+
+/** 일별 지표 단위 — 차트 데이터 포인트 */
+export interface DailyMetric {
+  /** YYYY-MM-DD 형식 */
+  date: string;
+  count: number;
+}
+
+/** 해시태그별 성과 집계 */
+export interface HashtagAnalytic {
+  hashtag: string;
+  postCount: number;
+  avgViews: number;
+  avgLikes: number;
+}
