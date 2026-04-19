@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -190,10 +191,12 @@ function CreatePost() {
               {imagePreview ? (
                 <>
                   {/* 미리보기 이미지 */}
-                  <img
+                  <Image
                     src={imagePreview}
                     alt="Preview"
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    unoptimized
                   />
                   {/* 호버 오버레이 — 평소에는 숨겨지고 호버 시에만 등장 */}
                   <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
