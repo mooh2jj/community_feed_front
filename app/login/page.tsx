@@ -16,7 +16,9 @@ import {
   faStar,
   faEye,
   faEyeSlash,
+  faCircleCheck,
 } from "@fortawesome/free-solid-svg-icons";
+import { faCircle } from "@fortawesome/free-regular-svg-icons";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
@@ -38,18 +40,34 @@ type LoginFormData = z.infer<typeof loginSchema>;
  * 로그인 페이지
  * react-hook-form + zod 기반 폼 검증
  */
+// localStorage 키 상수
+const REMEMBER_EMAIL_KEY = "studymate_remember_email";
+const SAVED_EMAIL_KEY = "studymate_saved_email";
+
 export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberEmail, setRememberEmail] = useState(false);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
+  // 마운트 시 저장된 이메일·기억하기 상태 복원
+  useEffect(() => {
+    const saved = localStorage.getItem(REMEMBER_EMAIL_KEY);
+    if (saved === "true") {
+      setRememberEmail(true);
+      const savedEmail = localStorage.getItem(SAVED_EMAIL_KEY);
+      if (savedEmail) setValue("email", savedEmail);
+    }
+  }, [setValue]);
 
   // 이미 로그인 상태면 홈으로 이동 (useEffect로 안전하게 처리)
   useEffect(() => {
@@ -59,6 +77,15 @@ export default function LoginPage() {
   }, [isAuthenticated, router]);
 
   const onSubmit = async (data: LoginFormData) => {
+    // 아이디 기억하기 체크 여부에 따라 localStorage 저장/삭제
+    if (rememberEmail) {
+      localStorage.setItem(REMEMBER_EMAIL_KEY, "true");
+      localStorage.setItem(SAVED_EMAIL_KEY, data.email);
+    } else {
+      localStorage.removeItem(REMEMBER_EMAIL_KEY);
+      localStorage.removeItem(SAVED_EMAIL_KEY);
+    }
+
     try {
       await login(data.email, data.password);
       toast.success("🎉 로그인 되었습니다!");
@@ -137,6 +164,26 @@ export default function LoginPage() {
                   {errors.password.message}
                 </p>
               )}
+            </div>
+
+            {/* 아이디 기억하기 */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setRememberEmail((prev) => !prev)}
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-purple-600 transition-colors select-none"
+                aria-pressed={rememberEmail}
+              >
+                <FontAwesomeIcon
+                  icon={rememberEmail ? faCircleCheck : faCircle}
+                  className={`text-lg transition-colors ${
+                    rememberEmail ? "text-purple-600" : "text-gray-300"
+                  }`}
+                />
+                <span className={rememberEmail ? "text-purple-600 font-medium" : ""}>
+                  아이디 기억하기
+                </span>
+              </button>
             </div>
 
             {/* 로그인 버튼 */}
